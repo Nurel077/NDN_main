@@ -1,4 +1,4 @@
-// Элементы DOM
+﻿// Элементы DOM
 const loginBtn = document.getElementById('loginBtn');
 const playBtn = document.getElementById('playBtn');
 const profileBtn = document.getElementById('profileBtn');
@@ -37,17 +37,55 @@ const changeUsernameBtn = document.getElementById('changeUsernameBtn');
 const changePasswordBtn = document.getElementById('changePasswordBtn');
 const exportDataBtn = document.getElementById('exportDataBtn');
 const logoutAccountBtn = document.getElementById('logoutAccountBtn');
-const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+const deleteAccountMenuBtn = document.getElementById('deleteAccountMenuBtn');
+const deleteAccountDangerBtn = document.getElementById('deleteAccountDangerBtn');
+
+const STORAGE_PREFIX = 'kochmonOrdo_';
+const LEGACY_STORAGE_PREFIX = 'ndnStore_';
+
+function getStorageValue(key) {
+    const newKey = `${STORAGE_PREFIX}${key}`;
+    const legacyKey = `${LEGACY_STORAGE_PREFIX}${key}`;
+    const newValue = localStorage.getItem(newKey);
+
+    if (newValue !== null) {
+        return newValue;
+    }
+
+    const legacyValue = localStorage.getItem(legacyKey);
+    if (legacyValue !== null) {
+        localStorage.setItem(newKey, legacyValue);
+        return legacyValue;
+    }
+
+    return null;
+}
+
+function setStorageValue(key, value) {
+    localStorage.setItem(`${STORAGE_PREFIX}${key}`, value);
+}
+
+function bindEvent(element, event, handler) {
+    if (element) {
+        element.addEventListener(event, handler);
+    }
+}
 
 // Система временного storage
 class TempStorage {
     constructor() {
-        this.storageKey = 'ndnStore_tempData';
+        this.storageKey = `${STORAGE_PREFIX}tempData`;
+        this.legacyStorageKey = `${LEGACY_STORAGE_PREFIX}tempData`;
         this.data = this.loadData();
     }
     
     loadData() {
         try {
+            const migrated = this.migrateLegacyData();
+            if (migrated) {
+                return migrated;
+            }
+
             const saved = localStorage.getItem(this.storageKey);
             return saved ? JSON.parse(saved) : {
                 users: [],
@@ -68,6 +106,21 @@ class TempStorage {
         }
     }
     
+    migrateLegacyData() {
+        const currentData = localStorage.getItem(this.storageKey);
+        if (currentData) {
+            return JSON.parse(currentData);
+        }
+
+        const legacyData = localStorage.getItem(this.legacyStorageKey);
+        if (!legacyData) {
+            return null;
+        }
+
+        localStorage.setItem(this.storageKey, legacyData);
+        return JSON.parse(legacyData);
+    }
+
     saveData() {
         try {
             this.data.lastUpdated = Date.now();
@@ -177,272 +230,141 @@ class TempStorage {
 // Система мультиязычности
 class LanguageManager {
     constructor() {
-        this.currentLanguage = localStorage.getItem('ndnStore_language') || 'ru';
-        this.translations = {
-            ru: {
-                welcome: 'Добро пожаловать в мир игр!',
-                description: 'Откройте для себя удивительную коллекцию игр и получите незабываемые впечатления',
-                login: 'Войти',
-                play: 'Начать играть',
-                profile: 'Профиль',
-                register: 'Регистрация',
-                username: 'Имя пользователя',
-                email: 'Email',
-                password: 'Пароль',
-                confirmPassword: 'Подтвердите пароль',
-                rememberMe: 'Запомнить меня',
-                cancel: 'Отмена',
-                profileInfo: 'Информация о профиле',
-                daysInSystem: 'дней в системе',
-                gamesPlayed: 'игр сыграно',
-                lastLogin: 'последний вход',
-                settings: 'Настройки',
-                language: 'Язык интерфейса',
-                theme: 'Тема оформления',
-                light: 'Светлая',
-                dark: 'Темная',
-                auto: 'Авто',
-                notifications: 'Уведомления',
-                emailNotifications: 'Email уведомления',
-                gameNotifications: 'Уведомления об играх',
-                newsNotifications: 'Новости и обновления',
-                accountManagement: 'Управление аккаунтом',
-                changeData: 'Изменение данных',
-                changeUsername: 'Изменить имя пользователя',
-                changePassword: 'Изменить пароль',
-                exportData: 'Экспорт данных',
-                downloadData: 'Скачать данные',
-                dangerZone: 'Опасная зона',
-                logout: 'Выйти из аккаунта',
-                deleteAccount: 'Удалить аккаунт',
-                back: 'Назад',
-                registered: 'Зарегистрирован',
-                // Дополнительные переводы
-                games: 'Игры',
-                aboutUs: 'О нас',
-                contacts: 'Контакты',
-                loginTitle: 'Вход в аккаунт',
-                registerTitle: 'Регистрация',
-                enterPassword: 'Введите пароль',
-                passwordRequirements: {
-                    length: 'Минимум 8 символов',
-                    uppercase: 'Заглавная буква',
-                    lowercase: 'Строчная буква',
-                    number: 'Цифра',
-                    special: 'Специальный символ'
-                },
-                passwordStrength: {
-                    weak: 'Слабый пароль',
-                    fair: 'Удовлетворительный пароль',
-                    good: 'Хороший пароль',
-                    strong: 'Отличный пароль'
-                },
-                passwordMatch: 'Пароли совпадают',
-                passwordNoMatch: 'Пароли не совпадают',
-                fastDownload: 'Быстрая загрузка',
-                fastDownloadDesc: 'Мгновенная загрузка игр',
-                security: 'Безопасность',
-                securityDesc: 'Защищенные платежи',
-                support247: 'Поддержка 24/7',
-                support247Desc: 'Всегда готовы помочь',
-                ndnStore: 'NDN Store',
-                bestGameStore: 'Лучший игровой магазин',
-                followUs: 'Следите за нами',
-                allRightsReserved: 'Все права защищены.',
-                today: 'Сегодня',
-                daysAgo: 'дней назад',
-                // Сообщения об ошибках
-                userNotFound: 'Пользователь с таким email не найден!',
-                wrongPassword: 'Неверный пароль!',
-                passwordsNotMatch: 'Пароли не совпадают!',
-                userExists: 'Пользователь с таким email уже существует!',
-                welcomeBack: 'Добро пожаловать обратно',
-                welcomeToStore: 'Добро пожаловать в NDN Store',
-                registrationSuccess: 'Регистрация успешна!',
-                logoutSuccess: 'Вы успешно вышли из аккаунта!',
-                accountDeleted: 'Аккаунт успешно удален!',
-                usernameChanged: 'Имя пользователя успешно изменено!',
-                passwordChanged: 'Пароль успешно изменен!',
-                dataExported: 'Данные успешно экспортированы!',
-                // Валидация
-                usernameMinLength: 'Имя пользователя должно содержать минимум 3 символа!',
-                usernameMaxLength: 'Имя пользователя не должно превышать 20 символов!',
-                usernameInvalidChars: 'Имя пользователя может содержать только буквы, цифры и подчеркивания!',
-                usernameStartLetter: 'Имя пользователя должно начинаться с буквы!',
-                emailRequired: 'Email адрес обязателен!',
-                emailTooLong: 'Email адрес слишком длинный!',
-                emailInvalid: 'Пожалуйста, введите корректный email адрес!',
-                emailOneAt: 'Email адрес должен содержать один символ @!',
-                emailLocalInvalid: 'Некорректная локальная часть email адреса!',
-                emailDomainInvalid: 'Некорректная доменная часть email адреса!',
-                emailStartEndDot: 'Email не может начинаться или заканчиваться точкой!',
-                emailDoubleDot: 'Email не может содержать двойные точки!',
-                passwordMinLength: 'Пароль должен содержать минимум 8 символов!',
-                passwordMaxLength: 'Пароль не должен превышать 128 символов!',
-                passwordUppercase: 'Пароль должен содержать хотя бы одну заглавную букву!',
-                passwordLowercase: 'Пароль должен содержать хотя бы одну строчную букву!',
-                passwordNumber: 'Пароль должен содержать хотя бы одну цифру!',
-                passwordSpecial: 'Пароль должен содержать хотя бы один специальный символ (!@#$%^&* и т.д.)!',
-                passwordNoSpaces: 'Пароль не должен содержать пробелы!',
-                passwordCommon: 'Этот пароль слишком распространен. Выберите более сложный пароль!',
-                // Игры
-                selectGame: 'Выберите игру',
-                spaceAdventure: 'Space Adventure',
-                spaceAdventureDesc: 'Космические приключения',
-                medievalQuest: 'Война рыцарей',
-                medievalQuestDesc: 'Средневековые приключения',
-                racingPro: 'Racing Pro',
-                racingProDesc: 'Гонки на выживание',
-                blastThree: 'Blast Three',
-                blastThreeDesc: 'Взрывная головоломка',
-                gameLoading: 'Игра загружается...',
-                // Подтверждения
-                logoutConfirm: 'Выйти из аккаунта?',
-                logoutConfirmText: 'Вы уверены, что хотите выйти из аккаунта?',
-                yesLogout: 'Да, выйти',
-                deleteAccountConfirm: 'Удалить аккаунт?',
-                deleteAccountText: 'Это действие необратимо! Все ваши данные будут удалены навсегда.',
-                deleteAccountWarning: 'Внимание: Вы потеряете доступ ко всем играм и данным.',
-                yesDelete: 'Да, удалить',
-                enterCurrentPassword: 'Введите текущий пароль:',
-                enterNewPassword: 'Введите новый пароль:',
-                wrongCurrentPassword: 'Неверный пароль!'
+        this.currentLanguage = getStorageValue('language') || 'ky';
+        const kyrgyzTranslations = {
+            welcome: 'Оюн дүйнөсүнө кош келиңиз!',
+            description: 'Кызыктуу оюндарды ачып, унутулгус таасир алыңыз',
+            login: 'Кирүү',
+            play: 'Ойной баштоо',
+            profile: 'Профиль',
+            register: 'Катталуу',
+            username: 'Колдонуучу аты',
+            email: 'Электрондук почта',
+            password: 'Сырсөз',
+            confirmPassword: 'Сырсөздү ырастаңыз',
+            rememberMe: 'Мени эстеп кал',
+            cancel: 'Жокко чыгаруу',
+            continue: 'Улантуу',
+            profileInfo: 'Профиль маалыматы',
+            daysInSystem: 'системадагы күндөр',
+            gamesPlayed: 'ойнолгон оюндар',
+            lastLogin: 'акыркы кирүү',
+            settings: 'Жөндөөлөр',
+            language: 'Интерфейс тили',
+            theme: 'Тема',
+            light: 'Жарык',
+            dark: 'Караңгы',
+            auto: 'Авто',
+            notifications: 'Билдирмелер',
+            emailNotifications: 'Электрондук почта билдирмелери',
+            gameNotifications: 'Оюн билдирмелери',
+            newsNotifications: 'Жаңылыктар жана жаңыртуулар',
+            accountManagement: 'Аккаунтту башкаруу',
+            changeData: 'Маалыматты өзгөртүү',
+            changeUsername: 'Колдонуучу атын өзгөртүү',
+            changePassword: 'Сырсөздү өзгөртүү',
+            exportData: 'Маалыматты экспорттоо',
+            downloadData: 'Маалыматты жүктөп алуу',
+            dangerZone: 'Кооптуу аймак',
+            logout: 'Аккаунттан чыгуу',
+            deleteAccount: 'Аккаунтту өчүрүү',
+            back: 'Артка',
+            registered: 'Катталган',
+            games: 'Оюндар',
+            aboutUs: 'Биз жөнүндө',
+            contacts: 'Байланыш',
+            loginTitle: 'Аккаунтка кирүү',
+            registerTitle: 'Катталуу',
+            enterPassword: 'Сырсөздү киргизиңиз',
+            passwordRequirements: {
+                length: 'Кеминде 8 белги',
+                uppercase: 'Баш тамга',
+                lowercase: 'Кичине тамга',
+                number: 'Сан',
+                special: 'Атайын белги'
             },
-            en: {
-                welcome: 'Welcome to the world of games!',
-                description: 'Discover an amazing collection of games and get unforgettable experiences',
-                login: 'Login',
-                play: 'Start Playing',
-                profile: 'Profile',
-                register: 'Registration',
-                username: 'Username',
-                email: 'Email',
-                password: 'Password',
-                confirmPassword: 'Confirm Password',
-                rememberMe: 'Remember me',
-                cancel: 'Cancel',
-                profileInfo: 'Profile Information',
-                daysInSystem: 'days in system',
-                gamesPlayed: 'games played',
-                lastLogin: 'last login',
-                settings: 'Settings',
-                language: 'Interface Language',
-                theme: 'Theme',
-                light: 'Light',
-                dark: 'Dark',
-                auto: 'Auto',
-                notifications: 'Notifications',
-                emailNotifications: 'Email notifications',
-                gameNotifications: 'Game notifications',
-                newsNotifications: 'News and updates',
-                accountManagement: 'Account Management',
-                changeData: 'Change Data',
-                changeUsername: 'Change Username',
-                changePassword: 'Change Password',
-                exportData: 'Export Data',
-                downloadData: 'Download Data',
-                dangerZone: 'Danger Zone',
-                logout: 'Logout',
-                deleteAccount: 'Delete Account',
-                back: 'Back',
-                registered: 'Registered',
-                // Additional translations
-                games: 'Games',
-                aboutUs: 'About Us',
-                contacts: 'Contacts',
-                loginTitle: 'Login to Account',
-                registerTitle: 'Registration',
-                enterPassword: 'Enter password',
-                passwordRequirements: {
-                    length: 'Minimum 8 characters',
-                    uppercase: 'Uppercase letter',
-                    lowercase: 'Lowercase letter',
-                    number: 'Number',
-                    special: 'Special character'
-                },
-                passwordStrength: {
-                    weak: 'Weak password',
-                    fair: 'Fair password',
-                    good: 'Good password',
-                    strong: 'Strong password'
-                },
-                passwordMatch: 'Passwords match',
-                passwordNoMatch: 'Passwords do not match',
-                fastDownload: 'Fast Download',
-                fastDownloadDesc: 'Instant game downloads',
-                security: 'Security',
-                securityDesc: 'Secure payments',
-                support247: '24/7 Support',
-                support247Desc: 'Always ready to help',
-                ndnStore: 'NDN Store',
-                bestGameStore: 'Best game store',
-                followUs: 'Follow us',
-                allRightsReserved: 'All rights reserved.',
-                today: 'Today',
-                daysAgo: 'days ago',
-                // Error messages
-                userNotFound: 'User with this email not found!',
-                wrongPassword: 'Wrong password!',
-                passwordsNotMatch: 'Passwords do not match!',
-                userExists: 'User with this email already exists!',
-                welcomeBack: 'Welcome back',
-                welcomeToStore: 'Welcome to NDN Store',
-                registrationSuccess: 'Registration successful!',
-                logoutSuccess: 'You have successfully logged out!',
-                accountDeleted: 'Account successfully deleted!',
-                usernameChanged: 'Username successfully changed!',
-                passwordChanged: 'Password successfully changed!',
-                dataExported: 'Data successfully exported!',
-                // Validation
-                usernameMinLength: 'Username must contain at least 3 characters!',
-                usernameMaxLength: 'Username must not exceed 20 characters!',
-                usernameInvalidChars: 'Username can only contain letters, numbers and underscores!',
-                usernameStartLetter: 'Username must start with a letter!',
-                emailRequired: 'Email address is required!',
-                emailTooLong: 'Email address is too long!',
-                emailInvalid: 'Please enter a valid email address!',
-                emailOneAt: 'Email address must contain one @ symbol!',
-                emailLocalInvalid: 'Invalid local part of email address!',
-                emailDomainInvalid: 'Invalid domain part of email address!',
-                emailStartEndDot: 'Email cannot start or end with a dot!',
-                emailDoubleDot: 'Email cannot contain double dots!',
-                passwordMinLength: 'Password must contain at least 8 characters!',
-                passwordMaxLength: 'Password must not exceed 128 characters!',
-                passwordUppercase: 'Password must contain at least one uppercase letter!',
-                passwordLowercase: 'Password must contain at least one lowercase letter!',
-                passwordNumber: 'Password must contain at least one number!',
-                passwordSpecial: 'Password must contain at least one special character (!@#$%^&* etc.)!',
-                passwordNoSpaces: 'Password must not contain spaces!',
-                passwordCommon: 'This password is too common. Choose a more complex password!',
-                // Games
-                selectGame: 'Select Game',
-                spaceAdventure: 'Space Adventure',
-                spaceAdventureDesc: 'Space adventures',
-                medievalQuest: 'Knights War',
-                medievalQuestDesc: 'Medieval adventures',
-                racingPro: 'Racing Pro',
-                racingProDesc: 'Survival racing',
-                blastThree: 'Blast Three',
-                blastThreeDesc: 'Explosive puzzle',
-                gameLoading: 'Game loading...',
-                // Confirmations
-                logoutConfirm: 'Logout from account?',
-                logoutConfirmText: 'Are you sure you want to logout from your account?',
-                yesLogout: 'Yes, logout',
-                deleteAccountConfirm: 'Delete account?',
-                deleteAccountText: 'This action is irreversible! All your data will be deleted forever.',
-                deleteAccountWarning: 'Warning: You will lose access to all games and data.',
-                yesDelete: 'Yes, delete',
-                enterCurrentPassword: 'Enter current password:',
-                enterNewPassword: 'Enter new password:',
-                wrongCurrentPassword: 'Wrong password!'
-            }
+            passwordStrength: {
+                weak: 'Алсыз сырсөз',
+                fair: 'Орточо сырсөз',
+                good: 'Жакшы сырсөз',
+                strong: 'Күчтүү сырсөз'
+            },
+            passwordMatch: 'Сырсөздөр дал келди',
+            passwordNoMatch: 'Сырсөздөр дал келген жок',
+            fastDownload: 'Тез жүктөө',
+            fastDownloadDesc: 'Оюндар заматта жүктөлөт',
+            security: 'Коопсуздук',
+            securityDesc: 'Коопсуз төлөмдөр',
+            support247: '24/7 Колдоо',
+            support247Desc: 'Ар дайым жардам беребиз',
+            ndnStore: 'Көчмөн Ордо',
+            bestGameStore: 'Мыкты оюн дүкөнү',
+            followUs: 'Бизди ээрчиңиз',
+            allRightsReserved: 'Бардык укуктар корголгон.',
+            today: 'Бүгүн',
+            daysAgo: 'күн мурун',
+            userNotFound: 'Мындай email менен колдонуучу табылган жок!',
+            wrongPassword: 'Сырсөз туура эмес!',
+            passwordsNotMatch: 'Сырсөздөр дал келген жок!',
+            userExists: 'Бул email менен колдонуучу мурунтан бар!',
+            welcomeBack: 'Кайра кош келиңиз',
+            welcomeToStore: 'Көчмөн Ордо платформасына кош келиңиз',
+            registrationSuccess: 'Катталуу ийгиликтүү бүттү!',
+            logoutSuccess: 'Аккаунттан ийгиликтүү чыктыңыз!',
+            accountDeleted: 'Аккаунт ийгиликтүү өчүрүлдү!',
+            usernameChanged: 'Колдонуучу аты ийгиликтүү өзгөртүлдү!',
+            passwordChanged: 'Сырсөз ийгиликтүү өзгөртүлдү!',
+            dataExported: 'Маалымат ийгиликтүү экспорттолду!',
+            usernameMinLength: 'Колдонуучу аты кеминде 3 белгиден турушу керек!',
+            usernameMaxLength: 'Колдонуучу аты 20 белгиден ашпашы керек!',
+            usernameInvalidChars: 'Колдонуучу аты тамга, сан жана "_" гана камтышы керек!',
+            usernameStartLetter: 'Колдонуучу аты тамга менен башталышы керек!',
+            emailRequired: 'Email дареги милдеттүү!',
+            emailTooLong: 'Email дареги өтө узун!',
+            emailInvalid: 'Туура email дарегин киргизиңиз!',
+            emailOneAt: 'Email дарегинде бир гана @ белгиси болушу керек!',
+            emailLocalInvalid: 'Email дарегинин жергиликтүү бөлүгү туура эмес!',
+            emailDomainInvalid: 'Email дарегинин домен бөлүгү туура эмес!',
+            emailStartEndDot: 'Email чекит менен башталып же аяктабашы керек!',
+            emailDoubleDot: 'Email ичинде кош чекит болбошу керек!',
+            passwordMinLength: 'Сырсөз кеминде 8 белгиден турушу керек!',
+            passwordMaxLength: 'Сырсөз 128 белгиден ашпашы керек!',
+            passwordUppercase: 'Сырсөздө жок дегенде бир баш тамга болушу керек!',
+            passwordLowercase: 'Сырсөздө жок дегенде бир кичине тамга болушу керек!',
+            passwordNumber: 'Сырсөздө жок дегенде бир сан болушу керек!',
+            passwordSpecial: 'Сырсөздө жок дегенде бир атайын белги болушу керек!',
+            passwordNoSpaces: 'Сырсөздө боштук болбошу керек!',
+            passwordCommon: 'Бул сырсөз өтө кеңири колдонулат. Татаалыраак сырсөз тандаңыз!',
+            selectGame: 'Оюнду тандаңыз',
+            kochmonOrnoku: 'Көчмөн Орноку',
+            kochmonOrnokuDesc: 'Улуттук рухтагы оюн',
+            flappyBird: 'Канаттуу куш',
+            flappyBirdDesc: 'Классикалык аркада учуу оюну',
+            kochmonLoading: 'Көчмөн Орноку ачылып жатат!',
+            flappyLoading: 'Канаттуу куш ачылып жатат!',
+            gameLoading: 'Оюн ачылып жатат...',
+            logoutConfirm: 'Аккаунттан чыгасызбы?',
+            logoutConfirmText: 'Аккаунттан чыгууга ишенесизби?',
+            yesLogout: 'Ооба, чыгам',
+            deleteAccountConfirm: 'Аккаунтту өчүрөсүзбү?',
+            deleteAccountText: 'Бул аракет артка кайтарылбайт! Бардык маалыматыңыз өчүрүлөт.',
+            deleteAccountWarning: 'Эскертүү: бардык оюндарга жана маалыматка жетүү жоголот.',
+            yesDelete: 'Ооба, өчүрүү',
+            enterCurrentPassword: 'Учурдагы сырсөздү киргизиңиз:',
+            enterNewPassword: 'Жаңы сырсөздү киргизиңиз:',
+            wrongCurrentPassword: 'Учурдагы сырсөз туура эмес!',
+            returnFromGame: 'Кайра кош келиңиз! Сайт жаңыртылды.'
+        };
+        this.translations = {
+            ky: kyrgyzTranslations,
+            ru: kyrgyzTranslations,
+            en: kyrgyzTranslations
         };
     }
     
     setLanguage(lang) {
         this.currentLanguage = lang;
-        localStorage.setItem('ndnStore_language', lang);
+        setStorageValue('language', lang);
         this.updateUI();
     }
     
@@ -598,27 +520,28 @@ class LanguageManager {
 class SettingsManager {
     constructor() {
         this.settings = {
-            language: localStorage.getItem('ndnStore_language') || 'ru',
-            theme: localStorage.getItem('ndnStore_theme') || 'light',
+            language: getStorageValue('language') || 'ky',
+            theme: getStorageValue('theme') || 'light',
             notifications: {
-                email: localStorage.getItem('ndnStore_emailNotifications') !== 'false',
-                games: localStorage.getItem('ndnStore_gameNotifications') !== 'false',
-                news: localStorage.getItem('ndnStore_newsNotifications') === 'true'
+                email: getStorageValue('emailNotifications') !== 'false',
+                games: getStorageValue('gameNotifications') !== 'false',
+                news: getStorageValue('newsNotifications') === 'true'
             }
         };
     }
     
     saveSettings() {
-        localStorage.setItem('ndnStore_language', this.settings.language);
-        localStorage.setItem('ndnStore_theme', this.settings.theme);
-        localStorage.setItem('ndnStore_emailNotifications', this.settings.notifications.email);
-        localStorage.setItem('ndnStore_gameNotifications', this.settings.notifications.games);
-        localStorage.setItem('ndnStore_newsNotifications', this.settings.notifications.news);
+        setStorageValue('language', this.settings.language);
+        setStorageValue('theme', this.settings.theme);
+        setStorageValue('emailNotifications', this.settings.notifications.email);
+        setStorageValue('gameNotifications', this.settings.notifications.games);
+        setStorageValue('newsNotifications', this.settings.notifications.news);
     }
     
     applyTheme(theme) {
         this.settings.theme = theme;
-        document.body.className = `theme-${theme}`;
+        document.body.classList.remove('theme-light', 'theme-dark', 'theme-auto');
+        document.body.classList.add(`theme-${theme}`);
         this.saveSettings();
     }
 }
@@ -660,25 +583,25 @@ languageManager.updateUI();
 settingsManager.applyTheme(settingsManager.settings.theme);
 
 // Добавляем информацию о storage в консоль для отладки
-console.log('NDN Store - Информация о storage:', tempStorage.getStorageInfo());
+console.log('Көчмөн Ордо - storage маалыматы:', tempStorage.getStorageInfo());
 
 // Обработчик клика на кнопку "Войти"
-loginBtn.addEventListener('click', function() {
+bindEvent(loginBtn, 'click', function() {
     // Показываем формы входа/регистрации только для неавторизованных пользователей
     showAuthForms();
 });
 
 // Обработчики табов
-loginTab.addEventListener('click', function() {
+bindEvent(loginTab, 'click', function() {
     switchToLoginTab();
 });
 
-registerTab.addEventListener('click', function() {
+bindEvent(registerTab, 'click', function() {
     switchToRegisterTab();
 });
 
 // Обработчик формы входа
-loginFormElement.addEventListener('submit', function(e) {
+bindEvent(loginFormElement, 'submit', function(e) {
     e.preventDefault();
     
     const email = document.getElementById('loginEmail').value.trim();
@@ -708,7 +631,7 @@ loginFormElement.addEventListener('submit', function(e) {
 });
 
 // Обработчик кнопки "Отмена" для входа
-cancelLogin.addEventListener('click', function() {
+bindEvent(cancelLogin, 'click', function() {
     hideAuthForms();
 });
 
@@ -720,12 +643,12 @@ document.addEventListener('click', function(e) {
 });
 
 // Обработчик кнопки "Отмена" для регистрации
-cancelReg.addEventListener('click', function() {
+bindEvent(cancelReg, 'click', function() {
     hideAuthForms();
 });
 
 // Обработчик отправки формы регистрации
-regForm.addEventListener('submit', function(e) {
+bindEvent(regForm, 'submit', function(e) {
     e.preventDefault();
     
     const username = document.getElementById('username').value.trim();
@@ -795,17 +718,17 @@ regForm.addEventListener('submit', function(e) {
 });
 
 // Обработчик клика на кнопку "Начать играть"
-playBtn.addEventListener('click', function() {
+bindEvent(playBtn, 'click', function() {
     showGameSelection();
 });
 
 // Обработчик клика на кнопку "Профиль"
-profileBtn.addEventListener('click', function() {
+bindEvent(profileBtn, 'click', function() {
     showProfile();
 });
 
 // Обработчик клика на кнопку меню пользователя
-userMenuBtn.addEventListener('click', function() {
+bindEvent(userMenuBtn, 'click', function() {
     // Переключаем видимость меню пользователя
     if (userMenu.style.display === 'block') {
         hideUserMenu();
@@ -815,20 +738,20 @@ userMenuBtn.addEventListener('click', function() {
 });
 
 // Обработчик кнопки "Назад" в профиле
-backToMainBtn.addEventListener('click', function() {
+bindEvent(backToMainBtn, 'click', function() {
     hideProfile();
 });
 
 // Обработчики табов профиля
-profileTab.addEventListener('click', function() {
+bindEvent(profileTab, 'click', function() {
     switchProfileTab('profile');
 });
 
-settingsTab.addEventListener('click', function() {
+bindEvent(settingsTab, 'click', function() {
     switchProfileTab('settings');
 });
 
-accountTab.addEventListener('click', function() {
+bindEvent(accountTab, 'click', function() {
     switchProfileTab('account');
 });
 
@@ -857,77 +780,95 @@ document.querySelectorAll('.theme-btn').forEach(btn => {
 });
 
 // Обработчики уведомлений
-document.getElementById('emailNotifications').addEventListener('change', function() {
+const emailNotificationsInput = document.getElementById('emailNotifications');
+const gameNotificationsInput = document.getElementById('gameNotifications');
+const newsNotificationsInput = document.getElementById('newsNotifications');
+
+bindEvent(emailNotificationsInput, 'change', function() {
     settingsManager.settings.notifications.email = this.checked;
     settingsManager.saveSettings();
 });
 
-document.getElementById('gameNotifications').addEventListener('change', function() {
+bindEvent(gameNotificationsInput, 'change', function() {
     settingsManager.settings.notifications.games = this.checked;
     settingsManager.saveSettings();
 });
 
-document.getElementById('newsNotifications').addEventListener('change', function() {
+bindEvent(newsNotificationsInput, 'change', function() {
     settingsManager.settings.notifications.news = this.checked;
     settingsManager.saveSettings();
 });
 
 // Обработчики управления аккаунтом
-changeUsernameBtn.addEventListener('click', function() {
+bindEvent(changeUsernameBtn, 'click', function() {
     showChangeUsernameDialog();
 });
 
-changePasswordBtn.addEventListener('click', function() {
+bindEvent(changePasswordBtn, 'click', function() {
     showChangePasswordDialog();
 });
 
-exportDataBtn.addEventListener('click', function() {
+bindEvent(exportDataBtn, 'click', function() {
     exportUserData();
 });
 
-logoutAccountBtn.addEventListener('click', function() {
+bindEvent(logoutAccountBtn, 'click', function() {
     logout();
 });
 
-deleteAccountBtn.addEventListener('click', function() {
+bindEvent(deleteAccountDangerBtn, 'click', function() {
     showDeleteConfirmation();
 });
 
 // Обработчик клика на кнопку "Выйти"
-logoutBtn.addEventListener('click', function() {
+bindEvent(logoutBtn, 'click', function() {
     logout();
 });
 
 // Обработчик клика на кнопку "Удалить аккаунт"
-deleteAccountBtn.addEventListener('click', function() {
+bindEvent(deleteAccountMenuBtn, 'click', function() {
     showDeleteConfirmation();
 });
 
 // Функции выхода и удаления
-function logout() {
-    // Показываем подтверждение
+function createConfirmationModal(options) {
+    const {
+        modalClass,
+        title,
+        description,
+        confirmText,
+        confirmButtonClass = 'btn-primary',
+        confirmIconClass = 'fas fa-check',
+        warningText = '',
+        warningIconClass = '',
+        onConfirm
+    } = options;
+
+    document.querySelectorAll('.logout-confirmation, .delete-confirmation').forEach(modal => modal.remove());
+
     const message = document.createElement('div');
-    message.className = 'logout-confirmation';
+    message.className = modalClass;
     message.innerHTML = `
         <div class="confirmation-content">
-            <h3>${languageManager.getText('logoutConfirm')}</h3>
-            <p>${languageManager.getText('logoutConfirmText')}</p>
+            ${warningIconClass ? `<div class="warning-icon"><i class="${warningIconClass}"></i></div>` : ''}
+            <h3>${title}</h3>
+            <p>${description}</p>
+            ${warningText ? `<div class="warning-text"><strong>${warningText}</strong></div>` : ''}
             <div class="confirmation-buttons">
-                <button class="btn btn-primary" onclick="confirmLogout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    ${languageManager.getText('yesLogout')}
+                <button class="btn ${confirmButtonClass} confirm-action-btn">
+                    <i class="${confirmIconClass}"></i>
+                    ${confirmText}
                 </button>
-                <button class="btn btn-secondary" onclick="this.closest('.logout-confirmation').remove()">
+                <button class="btn btn-secondary cancel-action-btn">
                     <i class="fas fa-times"></i>
                     ${languageManager.getText('cancel')}
                 </button>
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(message);
-    
-    // Стили для модального окна
+
     message.style.cssText = `
         position: fixed;
         top: 0;
@@ -941,7 +882,7 @@ function logout() {
         z-index: 10000;
         animation: fadeIn 0.3s ease-out;
     `;
-    
+
     const confirmationContent = message.querySelector('.confirmation-content');
     confirmationContent.style.cssText = `
         background: white;
@@ -950,10 +891,31 @@ function logout() {
         text-align: center;
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         animation: scaleIn 0.3s ease-out;
-        max-width: 400px;
+        max-width: 450px;
         width: 90%;
     `;
-    
+
+    const warningIcon = message.querySelector('.warning-icon');
+    if (warningIcon) {
+        warningIcon.style.cssText = `
+            font-size: 3rem;
+            color: #ef4444;
+            margin-bottom: 1rem;
+        `;
+    }
+
+    const warningBox = message.querySelector('.warning-text');
+    if (warningBox) {
+        warningBox.style.cssText = `
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border: 1px solid #fecaca;
+        `;
+    }
+
     const confirmationButtons = message.querySelector('.confirmation-buttons');
     confirmationButtons.style.cssText = `
         display: flex;
@@ -961,9 +923,38 @@ function logout() {
         justify-content: center;
         margin-top: 1.5rem;
     `;
+
+    bindEvent(message.querySelector('.cancel-action-btn'), 'click', function() {
+        message.remove();
+    });
+
+    bindEvent(message, 'click', function(event) {
+        if (event.target === message) {
+            message.remove();
+        }
+    });
+
+    bindEvent(message.querySelector('.confirm-action-btn'), 'click', function() {
+        if (typeof onConfirm === 'function') {
+            onConfirm();
+        }
+        message.remove();
+    });
 }
 
-function confirmLogout() {
+function logout() {
+    createConfirmationModal({
+        modalClass: 'logout-confirmation',
+        title: languageManager.getText('logoutConfirm'),
+        description: languageManager.getText('logoutConfirmText'),
+        confirmText: languageManager.getText('yesLogout'),
+        confirmButtonClass: 'btn-primary',
+        confirmIconClass: 'fas fa-sign-out-alt',
+        onConfirm: performLogout
+    });
+}
+
+function performLogout() {
     // Деактивируем текущую сессию
     if (userData.sessionId) {
         const session = tempStorage.data.sessions.find(s => s.id === userData.sessionId);
@@ -987,96 +978,26 @@ function confirmLogout() {
     
     // Восстанавливаем кнопку входа
     updateLoginButton();
-    
-    // Закрываем модальное окно
-    document.querySelector('.logout-confirmation').remove();
-    
+
     // Показываем сообщение
     showSuccessMessage(languageManager.getText('logoutSuccess'));
 }
 
 function showDeleteConfirmation() {
-    const message = document.createElement('div');
-    message.className = 'delete-confirmation';
-    message.innerHTML = `
-        <div class="confirmation-content">
-            <div class="warning-icon">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <h3>${languageManager.getText('deleteAccountConfirm')}</h3>
-            <p>${languageManager.getText('deleteAccountText')}</p>
-            <div class="warning-text">
-                <strong>${languageManager.getText('deleteAccountWarning')}</strong>
-            </div>
-            <div class="confirmation-buttons">
-                <button class="btn btn-danger" onclick="confirmDeleteAccount()">
-                    <i class="fas fa-trash"></i>
-                    ${languageManager.getText('yesDelete')}
-                </button>
-                <button class="btn btn-secondary" onclick="this.closest('.delete-confirmation').remove()">
-                    <i class="fas fa-times"></i>
-                    ${languageManager.getText('cancel')}
-                </button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(message);
-    
-    // Стили для модального окна
-    message.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-        animation: fadeIn 0.3s ease-out;
-    `;
-    
-    const confirmationContent = message.querySelector('.confirmation-content');
-    confirmationContent.style.cssText = `
-        background: white;
-        padding: 2rem;
-        border-radius: 12px;
-        text-align: center;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        animation: scaleIn 0.3s ease-out;
-        max-width: 450px;
-        width: 90%;
-    `;
-    
-    const warningIcon = message.querySelector('.warning-icon');
-    warningIcon.style.cssText = `
-        font-size: 3rem;
-        color: #ef4444;
-        margin-bottom: 1rem;
-    `;
-    
-    const warningText = message.querySelector('.warning-text');
-    warningText.style.cssText = `
-        background: #fef2f2;
-        color: #dc2626;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-        border: 1px solid #fecaca;
-    `;
-    
-    const confirmationButtons = message.querySelector('.confirmation-buttons');
-    confirmationButtons.style.cssText = `
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin-top: 1.5rem;
-    `;
+    createConfirmationModal({
+        modalClass: 'delete-confirmation',
+        title: languageManager.getText('deleteAccountConfirm'),
+        description: languageManager.getText('deleteAccountText'),
+        confirmText: languageManager.getText('yesDelete'),
+        confirmButtonClass: 'btn-danger',
+        confirmIconClass: 'fas fa-trash',
+        warningText: languageManager.getText('deleteAccountWarning'),
+        warningIconClass: 'fas fa-exclamation-triangle',
+        onConfirm: performDeleteAccount
+    });
 }
 
-function confirmDeleteAccount() {
+function performDeleteAccount() {
     // Удаляем пользователя из временного storage
     tempStorage.deleteUser(userData.email);
     
@@ -1102,17 +1023,10 @@ function confirmDeleteAccount() {
     
     // Восстанавливаем кнопку входа
     updateLoginButton();
-    
-    // Закрываем модальное окно
-    document.querySelector('.delete-confirmation').remove();
-    
+
     // Показываем сообщение
     showSuccessMessage(languageManager.getText('accountDeleted'));
 }
-
-// Глобальные функции для модальных окон
-window.confirmLogout = confirmLogout;
-window.confirmDeleteAccount = confirmDeleteAccount;
 
 // Интерактивные индикаторы пароля
 const passwordInput = document.getElementById('password');
@@ -1121,25 +1035,26 @@ const passwordRequirements = document.getElementById('passwordRequirements');
 const passwordMatch = document.getElementById('passwordMatch');
 
 // Обработчик ввода пароля
-passwordInput.addEventListener('input', function() {
+bindEvent(passwordInput, 'input', function() {
     const password = this.value;
     updatePasswordStrength(password);
     updatePasswordRequirements(password);
     
     // Проверяем совпадение паролей, если поле подтверждения заполнено
-    if (confirmPasswordInput.value) {
+    if (confirmPasswordInput && confirmPasswordInput.value) {
         checkPasswordMatch();
     }
 });
 
 // Обработчик ввода подтверждения пароля
-confirmPasswordInput.addEventListener('input', function() {
+bindEvent(confirmPasswordInput, 'input', function() {
     checkPasswordMatch();
 });
 
 function updatePasswordStrength(password) {
     const strengthFill = document.getElementById('strengthFill');
     const strengthText = document.getElementById('strengthText');
+    if (!strengthFill || !strengthText) return;
     
     let score = 0;
     let strength = 'weak';
@@ -1172,6 +1087,8 @@ function updatePasswordStrength(password) {
 }
 
 function updatePasswordRequirements(password) {
+    if (!passwordRequirements) return;
+
     const requirements = {
         'req-length': password.length >= 8,
         'req-uppercase': /[A-Z]/.test(password),
@@ -1190,6 +1107,7 @@ function updatePasswordRequirements(password) {
     // Обновляем статус каждого требования
     Object.keys(requirements).forEach(reqId => {
         const element = document.getElementById(reqId);
+        if (!element) return;
         if (requirements[reqId]) {
             element.classList.add('valid');
         } else {
@@ -1199,6 +1117,8 @@ function updatePasswordRequirements(password) {
 }
 
 function checkPasswordMatch() {
+    if (!passwordInput || !confirmPasswordInput || !passwordMatch) return;
+
     const password = passwordInput.value;
     const confirmPassword = confirmPasswordInput.value;
     
@@ -1211,10 +1131,10 @@ function checkPasswordMatch() {
     
     if (password === confirmPassword) {
         passwordMatch.className = 'password-match show match';
-        passwordMatch.textContent = languageManager ? languageManager.getText('passwordMatch') : 'Пароли совпадают';
+        passwordMatch.textContent = languageManager ? languageManager.getText('passwordMatch') : 'Сырсөздөр дал келди';
     } else {
         passwordMatch.className = 'password-match show no-match';
-        passwordMatch.textContent = languageManager ? languageManager.getText('passwordNoMatch') : 'Пароли не совпадают';
+        passwordMatch.textContent = languageManager ? languageManager.getText('passwordNoMatch') : 'Сырсөздөр дал келген жок';
     }
 }
 
@@ -1351,6 +1271,79 @@ function hideProfile() {
     }, 300);
 }
 
+function createInfoModal(title, description) {
+    const existingModal = document.querySelector('.info-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'info-modal';
+    modal.innerHTML = `
+        <div class="info-modal-content">
+            <h3>${title}</h3>
+            <p>${description}</p>
+            <button class="btn btn-primary close-info-modal-btn">
+                <i class="fas fa-check"></i>
+                ${languageManager.getText('continue')}
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease-out;
+        padding: 1rem;
+    `;
+
+    const modalContent = modal.querySelector('.info-modal-content');
+    modalContent.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        max-width: 520px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+        animation: scaleIn 0.3s ease-out;
+    `;
+
+    bindEvent(modal.querySelector('.close-info-modal-btn'), 'click', function() {
+        modal.remove();
+    });
+
+    bindEvent(modal, 'click', function(event) {
+        if (event.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+function showAboutModal() {
+    createInfoModal(
+        'Көчмөн Ордо',
+        'Көчмөн Ордо - кыргыз оюн дүкөнү. Катталып, профилди башкара аласыз жана оюндарды бир чыкылдатуу менен иштете аласыз.'
+    );
+}
+
+function showContactsModal() {
+    createInfoModal(
+        'Байланыш',
+        'Суроолор үчүн бизге жазыңыз: support@kochmon-ordo.kg. Биз 24/7 жардам беребиз.'
+    );
+}
+
 function updateProfileData() {
     if (!isRegistered) return;
     
@@ -1469,7 +1462,7 @@ function exportUserData() {
         
         const link = document.createElement('a');
         link.href = URL.createObjectURL(dataBlob);
-        link.download = `ndn-store-data-${user.username}-${new Date().toISOString().split('T')[0]}.json`;
+        link.download = `kochmon-ordo-data-${user.username}-${new Date().toISOString().split('T')[0]}.json`;
         link.click();
         
         showSuccessMessage(languageManager.getText('dataExported'));
@@ -1487,8 +1480,8 @@ function showUserMenu() {
             const profileMenuBtn = document.createElement('button');
             profileMenuBtn.id = 'profileMenuBtn';
             profileMenuBtn.className = 'user-action-btn';
-            profileMenuBtn.innerHTML = '<i class="fas fa-user-cog"></i> Профиль';
-            profileMenuBtn.addEventListener('click', function() {
+            profileMenuBtn.innerHTML = `<i class="fas fa-user-cog"></i> ${languageManager.getText('profile')}`;
+            bindEvent(profileMenuBtn, 'click', function() {
                 hideUserMenu();
                 showProfile();
             });
@@ -1506,11 +1499,11 @@ function showWelcomeMessage() {
     message.className = 'welcome-message';
     message.innerHTML = `
         <div class="welcome-content">
-            <h3>Добро пожаловать, ${userData.username}!</h3>
-            <p>Вы успешно вошли в систему</p>
+            <h3>Кош келиңиз, ${userData.username}!</h3>
+            <p>Системага ийгиликтүү кирдиңиз</p>
             <button class="btn btn-primary" onclick="this.parentElement.parentElement.remove()">
                 <i class="fas fa-check"></i>
-                Продолжить
+                Улантуу
             </button>
         </div>
     `;
@@ -1543,14 +1536,13 @@ function showWelcomeMessage() {
     `;
 }
 
-function showSuccessMessage() {
+function showSuccessMessage(successText) {
     const message = document.createElement('div');
     message.className = 'success-message';
     message.innerHTML = `
         <div class="success-content">
             <i class="fas fa-check-circle"></i>
-            <h3>Регистрация успешна!</h3>
-            <p>Добро пожаловать в NDN Store, ${userData.username}!</p>
+            <h3>${successText || languageManager.getText('registrationSuccess')}</h3>
         </div>
     `;
     
@@ -1561,7 +1553,7 @@ function showSuccessMessage() {
         position: fixed;
         top: 20px;
         right: 20px;
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, #8c3f21 0%, #c79a42 100%);
         color: white;
         padding: 1rem 1.5rem;
         border-radius: 12px;
@@ -1648,25 +1640,15 @@ function showGameSelection() {
                 </button>
             </div>
             <div class="games-grid">
-                <div class="game-card-modal" onclick="startGame('space')">
-                    <i class="fas fa-rocket"></i>
-                    <h3>${languageManager.getText('spaceAdventure')}</h3>
-                    <p>${languageManager.getText('spaceAdventureDesc')}</p>
+                <div class="game-card-modal" onclick="startGame('kochmon')">
+                    <i class="fas fa-horse"></i>
+                    <h3>${languageManager.getText('kochmonOrnoku')}</h3>
+                    <p>${languageManager.getText('kochmonOrnokuDesc')}</p>
                 </div>
-                <div class="game-card-modal" onclick="startGame('medieval')">
-                    <i class="fas fa-sword"></i>
-                    <h3>${languageManager.getText('medievalQuest')}</h3>
-                    <p>${languageManager.getText('medievalQuestDesc')}</p>
-                </div>
-                <div class="game-card-modal" onclick="startGame('racing')">
-                    <i class="fas fa-car"></i>
-                    <h3>${languageManager.getText('racingPro')}</h3>
-                    <p>${languageManager.getText('racingProDesc')}</p>
-                </div>
-                <div class="game-card-modal" onclick="startGame('blast')">
-                    <i class="fas fa-bomb"></i>
-                    <h3>${languageManager.getText('blastThree')}</h3>
-                    <p>${languageManager.getText('blastThreeDesc')}</p>
+                <div class="game-card-modal" onclick="startGame('flappy')">
+                    <i class="fas fa-dove"></i>
+                    <h3>${languageManager.getText('flappyBird')}</h3>
+                    <p>${languageManager.getText('flappyBirdDesc')}</p>
                 </div>
             </div>
         </div>
@@ -1706,18 +1688,19 @@ function showGameSelection() {
 // Глобальная функция для запуска игры
 window.startGame = function(gameType) {
     const gameMessages = {
-        space: '🚀 Запускаем Space Adventure! Приготовьтесь к космическим приключениям!',
-        medieval: '⚔️ Запускаем Война рыцарей! Время рыцарских подвигов!',
-        racing: '🏎️ Запускаем Racing Pro! Готовьтесь к гонкам!',
-        blast: '💥 Запускаем Blast Three! Взрывная головоломка!'
+        kochmon: languageManager.getText('kochmonLoading'),
+        flappy: languageManager.getText('flappyLoading')
     };
     
     const gameLinks = {
-        space: 'https://yandex.ru/games/app/209729',
-        medieval: 'https://yandex.ru/games/app/389452',
-        racing: 'https://yandex.ru/games/app/449371?utm_source=game_promo_catalog&yclid=5907334997312012287',
-        blast: 'https://nurel077.github.io/NDN_games/'
+        kochmon: 'https://nurel077.github.io/NDN_games/',
+        flappy: 'https://nurel077.github.io/flappy_bird/'
     };
+
+    if (!gameLinks[gameType]) {
+        showError('Бул оюн азырынча жеткиликтүү эмес.');
+        return;
+    }
     
     // Закрываем модальное окно
     document.querySelector('.game-selection-modal').remove();
@@ -1730,7 +1713,7 @@ window.startGame = function(gameType) {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #8c3f21 0%, #c79a42 100%);
             color: white;
             padding: 2rem;
             border-radius: 12px;
@@ -1740,7 +1723,7 @@ window.startGame = function(gameType) {
             animation: scaleIn 0.3s ease-out;
         ">
             <h3>${gameMessages[gameType]}</h3>
-            <p>Перенаправляем на игру...</p>
+            <p>${languageManager.getText('gameLoading')}</p>
         </div>
     `;
     document.body.appendChild(message);
@@ -1992,14 +1975,14 @@ style.textContent = `
     
     .game-selection-modal .game-card-modal:hover {
         background: white;
-        border-color: #6366f1;
+        border-color: #8c3f21;
         transform: translateY(-5px);
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
     
     .game-selection-modal .game-card-modal i {
         font-size: 2rem;
-        color: #6366f1;
+        color: #8c3f21;
         margin-bottom: 1rem;
     }
     
@@ -2157,7 +2140,7 @@ class GameReturnManager {
                 position: fixed;
                 top: 20px;
                 right: 20px;
-                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                background: linear-gradient(135deg, #8c3f21 0%, #c79a42 100%);
                 color: white;
                 padding: 1rem 1.5rem;
                 border-radius: 12px;
@@ -2169,7 +2152,7 @@ class GameReturnManager {
                 gap: 0.75rem;
             ">
                 <i class="fas fa-gamepad" style="font-size: 1.2rem;"></i>
-                <span>Добро пожаловать обратно! Сайт обновлен.</span>
+                <span>${languageManager.getText('returnFromGame')}</span>
             </div>
         `;
         
@@ -2189,3 +2172,8 @@ class GameReturnManager {
 
 // Инициализируем систему отслеживания возврата с игр
 const gameReturnManager = new GameReturnManager();
+
+
+
+
+
