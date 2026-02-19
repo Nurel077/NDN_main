@@ -340,6 +340,14 @@ class LanguageManager {
             kochmonOrnokuDesc: 'Улуттук рухтагы оюн',
             flappyBird: 'Канаттуу куш',
             flappyBirdDesc: 'Классикалык аркада учуу оюну',
+            arkanTartysh: 'Аркан тартыш',
+            arkanTartyshDesc: 'Салттуу юлүш оюну',
+            toguzKorgool: 'Тогуз коргоол',
+            toguzKorgoolDesc: 'Салттуу манкала оюну',
+            jaaAtuu: 'Жаа атуу',
+            jaaAtuuDesc: 'Ыктыярчы окучулардын оюну',
+            kokBoru: 'Кок-бору',
+            kokBoruDesc: 'Аткой аркада оюну',
             kochmonLoading: 'Көчмөн Орноку ачылып жатат!',
             flappyLoading: 'Канаттуу куш ачылып жатат!',
             gameLoading: 'Оюн ачылып жатат...',
@@ -1640,13 +1648,33 @@ function showGameSelection() {
                 </button>
             </div>
             <div class="games-grid">
-                <div class="game-card-modal" onclick="startGame('kochmon')">
+                <div class="game-card-modal" onclick="startGame('arkan')">
+                    <i class="fas fa-people-pulling"></i>
+                    <h3>${languageManager.getText('arkanTartysh')}</h3>
+                    <p>${languageManager.getText('arkanTartyshDesc')}</p>
+                </div>
+                <div class="game-card-modal" onclick="startGame('toguz')">
+                    <i class="fas fa-circle-dot"></i>
+                    <h3>${languageManager.getText('toguzKorgool')}</h3>
+                    <p>${languageManager.getText('toguzKorgoolDesc')}</p>
+                </div>
+                <div class="game-card-modal" onclick="startGame('jaa')">
+                    <i class="fas fa-bullseye"></i>
+                    <h3>${languageManager.getText('jaaAtuu')}</h3>
+                    <p>${languageManager.getText('jaaAtuuDesc')}</p>
+                </div>
+                <div class="game-card-modal" onclick="startGame('kok')">
                     <i class="fas fa-horse"></i>
+                    <h3>${languageManager.getText('kokBoru')}</h3>
+                    <p>${languageManager.getText('kokBoruDesc')}</p>
+                </div>
+                <div class="game-card-modal" onclick="startGame('kochmon')">
+                    <i class="fas fa-users"></i>
                     <h3>${languageManager.getText('kochmonOrnoku')}</h3>
                     <p>${languageManager.getText('kochmonOrnokuDesc')}</p>
                 </div>
                 <div class="game-card-modal" onclick="startGame('flappy')">
-                    <i class="fas fa-dove"></i>
+                    <i class="fas fa-bird"></i>
                     <h3>${languageManager.getText('flappyBird')}</h3>
                     <p>${languageManager.getText('flappyBirdDesc')}</p>
                 </div>
@@ -1676,7 +1704,7 @@ function showGameSelection() {
         background: white;
         padding: 2rem;
         border-radius: 12px;
-        max-width: 600px;
+        max-width: 800px;
         width: 90%;
         max-height: 80vh;
         overflow-y: auto;
@@ -1689,12 +1717,20 @@ function showGameSelection() {
 window.startGame = function(gameType) {
     const gameMessages = {
         kochmon: languageManager.getText('kochmonLoading'),
-        flappy: languageManager.getText('flappyLoading')
+        flappy: languageManager.getText('flappyLoading'),
+        arkan: languageManager.getText('gameLoading'),
+        toguz: languageManager.getText('gameLoading'),
+        jaa: languageManager.getText('gameLoading'),
+        kok: languageManager.getText('gameLoading')
     };
     
     const gameLinks = {
         kochmon: 'https://nurel077.github.io/NDN_games/',
-        flappy: 'https://nurel077.github.io/flappy_bird/'
+        flappy: 'https://nurel077.github.io/flappy_bird/',
+        arkan: 'index.html#arkan',
+        toguz: 'index.html#toguz',
+        jaa: 'index.html#jaa',
+        kok: 'index.html#kok'
     };
 
     if (!gameLinks[gameType]) {
@@ -1703,7 +1739,8 @@ window.startGame = function(gameType) {
     }
     
     // Закрываем модальное окно
-    document.querySelector('.game-selection-modal').remove();
+    const modal = document.querySelector('.game-selection-modal');
+    if (modal) modal.remove();
     
     // Показываем сообщение о запуске игры
     const message = document.createElement('div');
@@ -1728,9 +1765,16 @@ window.startGame = function(gameType) {
     `;
     document.body.appendChild(message);
     
-    // Открываем игру в новой вкладке
+    // Открываем игру в новой вкладке или в текущей странице
+    const externalGames = ['kochmon', 'flappy'];
     setTimeout(() => {
-        window.open(gameLinks[gameType], '_blank');
+        if (externalGames.includes(gameType)) {
+            // Внешние игры - открываем в новой вкладке
+            window.open(gameLinks[gameType], '_blank');
+        } else {
+            // Локальные игры - переходим на текущей странице
+            window.location.href = gameLinks[gameType];
+        }
         message.remove();
     }, 1500);
 };
@@ -1959,8 +2003,8 @@ style.textContent = `
     
     .game-selection-modal .games-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1.5rem;
     }
     
     .game-selection-modal .game-card-modal {
