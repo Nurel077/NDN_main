@@ -1,91 +1,155 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ky">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Оюндар - Көчмөн Ордо</title>
-    <link rel="stylesheet" href="mega.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Оюндар - Кочмон Ордо</title>
+  <link rel="stylesheet" href="games-theme.css">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-gamepad"></i>
-                    <h1>Көчмөн Ордо</h1>
-                </div>
-                <nav class="nav">
-                    <a href="index.html" class="nav-link">Башкы бет</a>
-                    <a href="about.html" class="nav-link">Биз жөнүндө</a>
-                    <a href="contacts.html" class="nav-link">Байланыш</a>
-                </nav>
-            </div>
-        </header>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand" id="brand">Кочмон Ордо</div>
+      <nav class="nav">
+        <a href="index.html" id="navHome">Башкы бет</a>
+        <a href="about.html" id="navAbout">Биз жөнүндө</a>
+        <a href="contacts.html" id="navContacts">Байланыш</a>
+      </nav>
+      <div class="lang-switch" id="langSwitch"></div>
+    </header>
 
-        <main class="main">
-            <section class="hero">
-                <div class="hero-content">
-                    <h2 class="hero-title">Оюндар</h2>
-                    <p class="hero-description">Кыргыз салттуу оюндары жана санариптик оюндар:</p>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 30px 0;">
-                        <!-- Arkan Tartysh -->
-                        <div class="feature" style="border: 2px solid #b24b2a; border-radius: 12px; padding: 20px; background: rgba(178, 75, 42, 0.05);">
-                            <i class="fas fa-people-pulling" style="font-size: 2.5rem; color: #b24b2a; margin-bottom: 10px;"></i>
-                            <h3>Аркан тартыш</h3>
-                            <p>Эки команда арасындагы салттуу юлүш оюну. Байланшын издете эмес, тартында чыгагыла!</p>
-                            <p><a class="btn btn-primary" href="index.html#arkan">Оюнду ачуу</a></p>
-                        </div>
+    <section class="hero">
+      <h1 id="heroTitle">Оюндар менюсу</h1>
+      <p id="heroDesc">Ар бир оюн өзүнчө баракта ачылат. Логика жана графика жаңыртылды.</p>
+    </section>
 
-                        <!-- Toguz Korgool -->
-                        <div class="feature" style="border: 2px solid #2f6b52; border-radius: 12px; padding: 20px; background: rgba(47, 107, 82, 0.05);">
-                            <i class="fas fa-circle-dot" style="font-size: 2.5rem; color: #2f6b52; margin-bottom: 10px;"></i>
-                            <h3>Тогуз коргоол</h3>
-                            <p>Салттуу манкала оюну. Абактарга таш сепкен жүргүлөрүңүздү жакшы ойлоп чыгыңыз!</p>
-                            <p><a class="btn btn-primary" href="index.html#toguz">Оюнду ачуу</a></p>
-                        </div>
+    <section class="rating">
+      <h3 id="ratingTitle">Жалпы рейтинг</h3>
+      <ul id="ratingList"></ul>
+      <p class="note" id="ratingNote"></p>
+    </section>
 
-                        <!-- Jaa Atuu -->
-                        <div class="feature" style="border: 2px solid #d84f30; border-radius: 12px; padding: 20px; background: rgba(216, 79, 48, 0.05);">
-                            <i class="fas fa-bullseye" style="font-size: 2.5rem; color: #d84f30; margin-bottom: 10px;"></i>
-                            <h3>Жаа атуу</h3>
-                            <p>Ыктыярчы окучулардын салттуу оюну. Аты түрүнөн жебе ыкма менен максатка батыштар!</p>
-                            <p><a class="btn btn-primary" href="index.html#jaa">Оюнду ачуу</a></p>
-                        </div>
+    <section class="grid">
+      <article class="card">
+        <h3 id="g1t">Аркан тартыш</h3>
+        <p id="g1d">Физикалык инерция, энергия системасы, таймер жана рекорддор.</p>
+        <a class="btn main" href="arkan-tartysh.html" id="g1b">Ачуу</a>
+      </article>
 
-                        <!-- Kok-boru -->
-                        <div class="feature" style="border: 2px solid #4474a8; border-radius: 12px; padding: 20px; background: rgba(68, 116, 168, 0.05);">
-                            <i class="fas fa-horse" style="font-size: 2.5rem; color: #4474a8; margin-bottom: 10px;"></i>
-                            <h3>Кок-бору</h3>
-                            <p>Аркада версиясы - улакты жаудулар аралынан өткөрүп, карай келгиле!</p>
-                            <p><a class="btn btn-primary" href="index.html#kok">Оюнду ачуу</a></p>
-                        </div>
+      <article class="card">
+        <h3 id="g2t">Тогуз коргоол</h3>
+        <p id="g2d">18 уя, казан, кармоо эрежеси, түздүк жана жеңиш эсеби.</p>
+        <a class="btn main" href="toguz-korgool.html" id="g2b">Ачуу</a>
+      </article>
 
-                        <!-- Kocho Ornoku (online) -->
-                        <div class="feature" style="border: 2px solid #8b6f47; border-radius: 12px; padding: 20px; background: rgba(139, 111, 71, 0.05);">
-                            <i class="fas fa-users" style="font-size: 2.5rem; color: #8b6f47; margin-bottom: 10px;"></i>
-                            <h3>Көчмөн Орноку</h3>
-                            <p>Онлайн режимде ойноо үчүн төмөнкү шилтемени басыңыз.</p>
-                            <p><a class="btn btn-primary" href="https://nurel077.github.io/NDN_games/" target="_blank" rel="noopener noreferrer">Оюнду ачуу</a></p>
-                        </div>
+      <article class="card">
+        <h3 id="g3t">Жаа атуу</h3>
+        <p id="g3d">Canvas физикасы, шамал, кыймылдаган бута жана так упай системасы.</p>
+        <a class="btn main" href="jaa-atuu.html" id="g3b">Ачуу</a>
+      </article>
 
-                        <!-- Kanattuu Kush (online) -->
-                        <div class="feature" style="border: 2px solid #6b4b30; border-radius: 12px; padding: 20px; background: rgba(107, 75, 48, 0.05);">
-                            <i class="fas fa-bird" style="font-size: 2.5rem; color: #6b4b30; margin-bottom: 10px;"></i>
-                            <h3>Канаттуу куш</h3>
-                            <p>Классикалык аркада оюнун түз эле браузерден иштетиңиз.</p>
-                            <p><a class="btn btn-primary" href="https://nurel077.github.io/flappy_bird/" target="_blank" rel="noopener noreferrer">Оюнду ачуу</a></p>
-                        </div>
-                    </div>
+      <article class="card">
+        <h3 id="g4t">Кок-бору</h3>
+        <p id="g4d">2D аркада: улак алуу, душмандардан качуу, гол киргизүү, убакыт жана өмүр.</p>
+        <a class="btn main" href="kok-boru.html" id="g4b">Ачуу</a>
+      </article>
 
-                    <div style="margin-top: 40px; padding: 20px; background: #f0e8d8; border-radius: 12px; border-left: 4px solid #b24b2a;">
-                        <h3>💡 Совет</h3>
-                        <p><strong>Аркан тартыш</strong>, <strong>Тогуз коргоол</strong>, <strong>Жаа атуу</strong> жана <strong>Кок-бору</strong> оюндарын түз ушул сайттан ойной аласыз, же төш өткүйүн басып байланыш орток кылыңыз!</p>
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
+      <article class="card">
+        <h3 id="g5t">Көчмөн Орноку</h3>
+        <p id="g5d">Онлайн версия (тышкы шилтеме).</p>
+        <a class="btn alt" href="https://nurel077.github.io/NDN_games/" target="_blank" rel="noopener noreferrer" id="g5b">Ачуу</a>
+      </article>
+
+      <article class="card">
+        <h3 id="g6t">Канаттуу куш</h3>
+        <p id="g6d">Классикалык браузер аркадасы (тышкы шилтеме).</p>
+        <a class="btn alt" href="https://nurel077.github.io/flappy_bird/" target="_blank" rel="noopener noreferrer" id="g6b">Ачуу</a>
+      </article>
+    </section>
+  </main>
+
+  <script src="games-i18n.js"></script>
+  <script>
+    const T = {
+      ky: {
+        navHome: 'Башкы бет', navAbout: 'Биз жөнүндө', navContacts: 'Байланыш',
+        heroTitle: 'Оюндар менюсу', heroDesc: 'Ар бир оюн өзүнчө баракта ачылат. Логика жана графика жаңыртылды.',
+        ratingTitle: 'Жалпы рейтинг', ratingNote: 'Формула: Аркан/Тогуз жеңиштери + Жаа best*2 + Кок-бору best*5',
+        g1t: 'Аркан тартыш', g1d: 'Физикалык инерция, энергия системасы, таймер жана рекорддор.',
+        g2t: 'Тогуз коргоол', g2d: '18 уя, казан, кармоо эрежеси, түздүк жана жеңиш эсеби.',
+        g3t: 'Жаа атуу', g3d: 'Canvas физикасы, шамал, кыймылдаган бута жана так упай системасы.',
+        g4t: 'Кок-бору', g4d: '2D аркада: улак алуу, душмандардан качуу, гол киргизүү, убакыт жана өмүр.',
+        g5t: 'Көчмөн Орноку', g5d: 'Онлайн версия (тышкы шилтеме).',
+        g6t: 'Канаттуу куш', g6d: 'Классикалык браузер аркадасы (тышкы шилтеме).',
+        open: 'Ачуу',
+        rArkan: 'Аркан тартыш: {v} упай', rToguz: 'Тогуз коргоол: {v} упай', rJaa: 'Жаа атуу: {v} упай', rKok: 'Кок-бору: {v} упай', rTotal: 'Жалпы: {v} упай'
+      },
+      ru: {
+        navHome: 'Главная', navAbout: 'О нас', navContacts: 'Контакты',
+        heroTitle: 'Меню игр', heroDesc: 'Каждая игра открывается на отдельной странице. Графика и механики обновлены.',
+        ratingTitle: 'Общий рейтинг', ratingNote: 'Формула: победы Аркан/Тогуз + best Жаа*2 + best Кок-бору*5',
+        g1t: 'Аркан тартыш', g1d: 'Физическая инерция, энергия, таймер и рекорды.',
+        g2t: 'Тогуз коргоол', g2d: '18 лунок, казаны, захваты, туздук и итог побед.',
+        g3t: 'Жаа атуу', g3d: 'Canvas-физика, ветер, движущаяся цель и точный подсчет очков.',
+        g4t: 'Кок-бору', g4d: '2D-аркада: взять улак, обойти соперников, забить гол.',
+        g5t: 'Кочмон Орноку', g5d: 'Онлайн версия (внешняя ссылка).',
+        g6t: 'Канаттуу куш', g6d: 'Классическая браузерная аркада (внешняя ссылка).',
+        open: 'Открыть',
+        rArkan: 'Аркан тартыш: {v} очков', rToguz: 'Тогуз коргоол: {v} очков', rJaa: 'Жаа атуу: {v} очков', rKok: 'Кок-бору: {v} очков', rTotal: 'Итого: {v} очков'
+      },
+      en: {
+        navHome: 'Home', navAbout: 'About', navContacts: 'Contacts',
+        heroTitle: 'Games Menu', heroDesc: 'Each game opens on its own page. Graphics and gameplay were improved.',
+        ratingTitle: 'Overall Rating', ratingNote: 'Formula: Arkan/Toguz wins + Archery best*2 + Kok-boru best*5',
+        g1t: 'Arkan Tartysh', g1d: 'Physics inertia, energy system, timer and records.',
+        g2t: 'Toguz Korgool', g2d: '18 pits, kazans, captures, tuzduk and winner stats.',
+        g3t: 'Jaa Atuu', g3d: 'Canvas physics, wind, moving target, and accurate scoring.',
+        g4t: 'Kok-boru', g4d: '2D arcade: pick ulak, avoid rivals, score goals.',
+        g5t: 'Kochmon Ornoku', g5d: 'Online version (external link).',
+        g6t: 'Flappy Bird', g6d: 'Classic browser arcade (external link).',
+        open: 'Open',
+        rArkan: 'Arkan Tartysh: {v} pts', rToguz: 'Toguz Korgool: {v} pts', rJaa: 'Jaa Atuu: {v} pts', rKok: 'Kok-boru: {v} pts', rTotal: 'Total: {v} pts'
+      }
+    };
+
+    function tx(key, params) { return NDN.text(T, key, params); }
+
+    function applyLang() {
+      const ids = ['navHome','navAbout','navContacts','heroTitle','heroDesc','ratingTitle','ratingNote','g1t','g1d','g2t','g2d','g3t','g3d','g4t','g4d','g5t','g5d','g6t','g6d'];
+      ids.forEach((id) => document.getElementById(id).textContent = tx(id));
+      ['g1b','g2b','g3b','g4b','g5b','g6b'].forEach((id) => document.getElementById(id).textContent = tx('open'));
+      buildRating();
+    }
+
+    function buildRating() {
+      const a = JSON.parse(localStorage.getItem('ndn_arkan_record_v2') || '{"left":0,"right":0}');
+      const t = JSON.parse(localStorage.getItem('ndn_toguz_record_v2') || '{"p1":0,"p2":0}');
+      const j = Number(localStorage.getItem('ndn_jaa_best_v2') || 0);
+      const k = Number(localStorage.getItem('ndn_kok_best_v2') || 0);
+
+      const arkanPts = (a.left + a.right) * 4;
+      const toguzPts = (t.p1 + t.p2) * 5;
+      const jaaPts = j * 2;
+      const kokPts = k * 5;
+      const total = arkanPts + toguzPts + jaaPts + kokPts;
+
+      const list = document.getElementById('ratingList');
+      list.innerHTML = '';
+      [
+        tx('rArkan', { v: arkanPts }),
+        tx('rToguz', { v: toguzPts }),
+        tx('rJaa', { v: jaaPts }),
+        tx('rKok', { v: kokPts }),
+        tx('rTotal', { v: total })
+      ].forEach((line) => {
+        const li = document.createElement('li');
+        li.textContent = line;
+        list.appendChild(li);
+      });
+    }
+
+    NDN.mountLang('langSwitch', applyLang);
+    applyLang();
+  </script>
 </body>
 </html>

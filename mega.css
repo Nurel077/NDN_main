@@ -6,15 +6,15 @@
 }
 
 :root {
-    --primary-color: #6366f1;
-    --primary-dark: #4f46e5;
-    --secondary-color: #ec4899;
-    --accent-color: #f59e0b;
+    --primary-color: #8c3f21;
+    --primary-dark: #6f2f17;
+    --secondary-color: #2f6b52;
+    --accent-color: #c79a42;
     --text-primary: #1f2937;
     --text-secondary: #6b7280;
     --bg-primary: #ffffff;
     --bg-secondary: #f9fafb;
-    --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --bg-gradient: linear-gradient(135deg, #8c3f21 0%, #c79a42 100%);
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -27,7 +27,10 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.6;
     color: var(--text-primary);
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background:
+        radial-gradient(circle at 15% 10%, rgba(199, 154, 66, 0.22), transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(140, 63, 33, 0.16), transparent 35%),
+        linear-gradient(135deg, #f8f1e4 0%, #e8dbc2 100%);
     min-height: 100vh;
     overflow-x: hidden;
 }
@@ -847,6 +850,79 @@ body {
 .stat-label {
     font-size: 0.9rem;
     color: var(--text-secondary);
+}
+
+.profile-progress {
+    margin-top: 1.25rem;
+    background: linear-gradient(130deg, rgba(140, 63, 33, 0.10), rgba(47, 107, 82, 0.10));
+    border: 1px solid rgba(140, 63, 33, 0.20);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+}
+
+.progress-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.progress-chip {
+    border: 1px solid rgba(140, 63, 33, 0.25);
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.35rem 0.8rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.xp-track {
+    width: 100%;
+    height: 12px;
+    border-radius: 999px;
+    background: #efe6d7;
+    overflow: hidden;
+    border: 1px solid rgba(140, 63, 33, 0.15);
+}
+
+.xp-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2f6b52, #c79a42);
+    transition: width 0.35s ease;
+}
+
+.profile-achievements {
+    margin-top: 1rem;
+    background: #f9fafb;
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+}
+
+.profile-achievements h4 {
+    margin-bottom: 0.75rem;
+}
+
+.badge-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.badge-item {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.badge-item.unlocked {
+    border-color: rgba(47, 107, 82, 0.45);
+    background: rgba(47, 107, 82, 0.12);
+    color: #20523d;
 }
 
 /* Настройки */

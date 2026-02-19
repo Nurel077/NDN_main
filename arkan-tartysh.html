@@ -1,0 +1,257 @@
+﻿<!DOCTYPE html>
+<html lang="ky">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Аркан тартыш</title>
+  <link rel="stylesheet" href="games-theme.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand" id="brand">Аркан тартыш</div>
+      <nav class="nav">
+        <a href="games.html" id="navGames">Оюндар</a>
+        <a href="index.html" id="navHome">Башкы бет</a>
+        <a href="toguz-korgool.html" id="navToguz">Тогуз коргоол</a>
+        <a href="jaa-atuu.html" id="navJaa">Жаа атуу</a>
+        <a href="kok-boru.html" id="navKok">Кок-бору</a>
+      </nav>
+      <div class="lang-switch" id="langSwitch"></div>
+    </header>
+
+    <section class="game-wrap">
+      <div class="game-head">
+        <h1 id="title">Аркан тартыш</h1>
+        <p id="desc">Башкаруу: сол команда A, оң команда L. Энергия жана кайтарым физикасы бар.</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat" id="timerStat"></div>
+        <div class="stat" id="leftEnergy"></div>
+        <div class="stat" id="rightEnergy"></div>
+        <div class="stat" id="record"></div>
+      </div>
+
+      <div class="panel">
+        <div class="meter"><div id="ropeFill"></div></div>
+        <div class="controls">
+          <button id="leftBtn"></button>
+          <button class="alt" id="rightBtn"></button>
+          <button id="resetBtn"></button>
+          <strong id="status"></strong>
+        </div>
+        <div class="leaderboard">
+          <h3 id="topTitle"></h3>
+          <ol id="topList"></ol>
+          <div class="controls">
+            <button id="clearTopBtn"></button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="games-i18n.js"></script>
+  <script>
+    const T = {
+      ky: {
+        navGames: 'Оюндар', navHome: 'Башкы бет', navToguz: 'Тогуз коргоол', navJaa: 'Жаа атуу', navKok: 'Кок-бору',
+        title: 'Аркан тартыш', desc: 'Башкаруу: сол команда A, оң команда L. Энергия жана кайтарым физикасы бар.',
+        timer: 'Убакыт: {v}', leftEnergy: 'Сол энергия: {v}', rightEnergy: 'Оң энергия: {v}', record: 'Рекорд: {l} - {r}',
+        leftBtn: 'Сол тартуу (A)', rightBtn: 'Оң тартуу (L)', resetBtn: 'Кайра баштоо',
+        start: 'Оюн башталды', winLeft: 'Сол команда жеңди', winRight: 'Оң команда жеңди', draw: 'Тең чыкты', byTime: 'убакыт',
+        topTitle: 'Топ-5 жыйынтык', clearTopBtn: 'Топту тазалоо', topEmpty: 'Азырынча жыйынтык жок', topEntry: '{i}) {v} упай'
+      },
+      ru: {
+        navGames: 'Игры', navHome: 'Главная', navToguz: 'Тогуз коргоол', navJaa: 'Жаа атуу', navKok: 'Кок-бору',
+        title: 'Аркан тартыш', desc: 'Управление: левая команда A, правая L. Есть энергия и физика возврата.',
+        timer: 'Время: {v}', leftEnergy: 'Энергия слева: {v}', rightEnergy: 'Энергия справа: {v}', record: 'Рекорд: {l} - {r}',
+        leftBtn: 'Тянуть влево (A)', rightBtn: 'Тянуть вправо (L)', resetBtn: 'Перезапуск',
+        start: 'Игра началась', winLeft: 'Левая команда победила', winRight: 'Правая команда победила', draw: 'Ничья', byTime: 'по времени',
+        topTitle: 'Топ-5 результатов', clearTopBtn: 'Очистить топ', topEmpty: 'Пока нет результатов', topEntry: '{i}) {v} очков'
+      },
+      en: {
+        navGames: 'Games', navHome: 'Home', navToguz: 'Toguz Korgool', navJaa: 'Jaa Atuu', navKok: 'Kok-boru',
+        title: 'Arkan Tartysh', desc: 'Controls: left team A, right team L. Includes stamina and spring physics.',
+        timer: 'Time: {v}', leftEnergy: 'Left stamina: {v}', rightEnergy: 'Right stamina: {v}', record: 'Record: {l} - {r}',
+        leftBtn: 'Pull Left (A)', rightBtn: 'Pull Right (L)', resetBtn: 'Restart',
+        start: 'Game started', winLeft: 'Left team wins', winRight: 'Right team wins', draw: 'Draw', byTime: 'time',
+        topTitle: 'Top-5 Results', clearTopBtn: 'Clear top', topEmpty: 'No results yet', topEntry: '{i}) {v} pts'
+      }
+    };
+
+    const ropeFill = document.getElementById('ropeFill');
+    const timerStat = document.getElementById('timerStat');
+    const leftEnergyEl = document.getElementById('leftEnergy');
+    const rightEnergyEl = document.getElementById('rightEnergy');
+    const statusEl = document.getElementById('status');
+    const recordEl = document.getElementById('record');
+
+    const leftBtn = document.getElementById('leftBtn');
+    const rightBtn = document.getElementById('rightBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const topList = document.getElementById('topList');
+    const topTitle = document.getElementById('topTitle');
+    const clearTopBtn = document.getElementById('clearTopBtn');
+
+    let pos = 0;
+    let vel = 0;
+    let leftEnergy = 100;
+    let rightEnergy = 100;
+    let timeLeft = 36;
+    let gameOver = false;
+    let lastTick = performance.now();
+
+    const recKey = 'ndn_arkan_record_v2';
+    const topKey = 'ndn_arkan_top5_v1';
+    const rec = JSON.parse(localStorage.getItem(recKey) || '{"left":0,"right":0}');
+    let top = JSON.parse(localStorage.getItem(topKey) || '[]');
+
+    function tx(k, p) { return NDN.text(T, k, p); }
+
+    function setStaticText() {
+      ['navGames','navHome','navToguz','navJaa','navKok','title','desc'].forEach((id) => {
+        document.getElementById(id).textContent = tx(id);
+      });
+      leftBtn.textContent = tx('leftBtn');
+      rightBtn.textContent = tx('rightBtn');
+      resetBtn.textContent = tx('resetBtn');
+      topTitle.textContent = tx('topTitle');
+      clearTopBtn.textContent = tx('clearTopBtn');
+    }
+
+    function updateRecord() {
+      recordEl.textContent = tx('record', { l: rec.left, r: rec.right });
+    }
+
+    function renderTop() {
+      topList.innerHTML = '';
+      if (!top.length) {
+        const li = document.createElement('li');
+        li.textContent = tx('topEmpty');
+        topList.appendChild(li);
+        return;
+      }
+      top.forEach((value, idx) => {
+        const li = document.createElement('li');
+        li.textContent = tx('topEntry', { i: idx + 1, v: value });
+        topList.appendChild(li);
+      });
+    }
+
+    function addTop(value) {
+      top.push(Math.max(0, Math.floor(value)));
+      top = top.sort((a, b) => b - a).slice(0, 5);
+      localStorage.setItem(topKey, JSON.stringify(top));
+      renderTop();
+    }
+
+    function updateUI() {
+      const width = 50 + pos;
+      ropeFill.style.width = `${Math.max(0, Math.min(100, width))}%`;
+      leftEnergyEl.textContent = tx('leftEnergy', { v: Math.round(leftEnergy) });
+      rightEnergyEl.textContent = tx('rightEnergy', { v: Math.round(rightEnergy) });
+      timerStat.textContent = tx('timer', { v: Math.ceil(timeLeft) });
+    }
+
+    function pull(side) {
+      if (gameOver) return;
+      const cost = 10;
+      const forceBase = 1.1;
+      if (side === 'left' && leftEnergy >= cost) {
+        vel -= forceBase + (leftEnergy / 220);
+        leftEnergy -= cost;
+      }
+      if (side === 'right' && rightEnergy >= cost) {
+        vel += forceBase + (rightEnergy / 220);
+        rightEnergy -= cost;
+      }
+      updateUI();
+    }
+
+    function finish(resultKey, timed) {
+      gameOver = true;
+      let msg = tx(resultKey);
+      if (timed) msg += ` (${tx('byTime')})`;
+      statusEl.textContent = msg;
+      if (resultKey === 'winLeft') rec.left += 1;
+      if (resultKey === 'winRight') rec.right += 1;
+      localStorage.setItem(recKey, JSON.stringify(rec));
+      const points = resultKey === 'draw'
+        ? 20 + Math.round(Math.abs(pos) * 1.5)
+        : 80 + Math.ceil(Math.max(0, timeLeft) * 3) + Math.round(Math.abs(pos) * 2);
+      addTop(points);
+      updateRecord();
+    }
+
+    function frame(now) {
+      const dt = Math.min(0.033, (now - lastTick) / 1000);
+      lastTick = now;
+
+      if (!gameOver) {
+        timeLeft -= dt;
+
+        // Balanced recovery: mid-tempo, not spam-heavy
+        leftEnergy = Math.min(100, leftEnergy + 13 * dt);
+        rightEnergy = Math.min(100, rightEnergy + 13 * dt);
+
+        vel += (-pos * 0.06) * dt;
+        vel *= 0.945;
+        pos += vel;
+
+        if (pos <= -44) finish('winLeft', false);
+        if (pos >= 44) finish('winRight', false);
+
+        if (timeLeft <= 0 && !gameOver) {
+          if (pos < -2) finish('winLeft', true);
+          else if (pos > 2) finish('winRight', true);
+          else finish('draw', false);
+        }
+      }
+
+      updateUI();
+      requestAnimationFrame(frame);
+    }
+
+    function reset() {
+      pos = 0;
+      vel = 0;
+      leftEnergy = 100;
+      rightEnergy = 100;
+      timeLeft = 36;
+      gameOver = false;
+      statusEl.textContent = tx('start');
+      updateUI();
+    }
+
+    leftBtn.addEventListener('click', () => pull('left'));
+    rightBtn.addEventListener('click', () => pull('right'));
+    resetBtn.addEventListener('click', reset);
+    clearTopBtn.addEventListener('click', () => {
+      top = [];
+      localStorage.setItem(topKey, JSON.stringify(top));
+      renderTop();
+    });
+    window.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+      if (key === 'a') pull('left');
+      if (key === 'l') pull('right');
+    });
+
+    NDN.mountLang('langSwitch', () => {
+      setStaticText();
+      updateUI();
+      updateRecord();
+      renderTop();
+      if (!gameOver) statusEl.textContent = tx('start');
+    });
+
+    setStaticText();
+    updateRecord();
+    renderTop();
+    reset();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

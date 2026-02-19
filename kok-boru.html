@@ -1,0 +1,322 @@
+﻿<!DOCTYPE html>
+<html lang="ky">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Кок-бору</title>
+  <link rel="stylesheet" href="games-theme.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand" id="brand">Кок-бору</div>
+      <nav class="nav">
+        <a href="games.html" id="navGames">Оюндар</a>
+        <a href="index.html" id="navHome">Башкы бет</a>
+        <a href="arkan-tartysh.html" id="navArkan">Аркан тартыш</a>
+        <a href="toguz-korgool.html" id="navToguz">Тогуз коргоол</a>
+        <a href="jaa-atuu.html" id="navJaa">Жаа атуу</a>
+      </nav>
+      <div class="lang-switch" id="langSwitch"></div>
+    </header>
+
+    <section class="game-wrap">
+      <div class="game-head">
+        <h1 id="title">Кок-бору</h1>
+        <p id="desc">← ↑ ↓ → менен кыймылда. Улакты алып казанга жеткир. Убакыт өткөн сайын душмандар ылдамдайт.</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat" id="goals"></div>
+        <div class="stat" id="lives"></div>
+        <div class="stat" id="timer"></div>
+        <div class="stat" id="best"></div>
+      </div>
+
+      <div class="panel">
+        <canvas id="c" width="860" height="420"></canvas>
+        <div class="controls">
+          <button id="resetBtn"></button>
+          <strong id="status"></strong>
+        </div>
+        <div class="leaderboard">
+          <h3 id="topTitle"></h3>
+          <ol id="topList"></ol>
+          <div class="controls">
+            <button id="clearTopBtn"></button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="games-i18n.js"></script>
+  <script>
+    const T = {
+      ky: {
+        navGames: 'Оюндар', navHome: 'Башкы бет', navArkan: 'Аркан тартыш', navToguz: 'Тогуз коргоол', navJaa: 'Жаа атуу',
+        title: 'Кок-бору', desc: '← ↑ ↓ → менен кыймылда. Улакты алып казанга жеткир. Убакыт өткөн сайын душмандар ылдамдайт.',
+        goals: 'Гол: {v}', lives: 'Өмүр: {v}', timer: 'Убакыт: {v}', best: 'Эң мыкты: {v}',
+        resetBtn: 'Кайра баштоо', start: 'Улакты ал!', takeToGoal: 'Эми казанга жеткир!', enemyHit: 'Душман тийди!', goal: 'Гол!', endByLives: 'Оюн бүттү. Гол: {v}', endByTime: 'Убакыт бүттү. Гол: {v}', result: 'Жыйынтык: {v} гол',
+        topTitle: 'Топ-5 гол', clearTopBtn: 'Топту тазалоо', topEmpty: 'Азырынча жыйынтык жок', topEntry: '{i}) {v} гол'
+      },
+      ru: {
+        navGames: 'Игры', navHome: 'Главная', navArkan: 'Аркан тартыш', navToguz: 'Тогуз коргоол', navJaa: 'Жаа атуу',
+        title: 'Кок-бору', desc: 'Движение: ← ↑ ↓ →. Забери улак и доставь в казан. Со временем соперники ускоряются.',
+        goals: 'Голы: {v}', lives: 'Жизни: {v}', timer: 'Время: {v}', best: 'Лучший: {v}',
+        resetBtn: 'Перезапуск', start: 'Забери улак!', takeToGoal: 'Теперь доставь в казан!', enemyHit: 'Вас задел соперник!', goal: 'Гол!', endByLives: 'Игра окончена. Голы: {v}', endByTime: 'Время вышло. Голы: {v}', result: 'Результат: {v} голов',
+        topTitle: 'Топ-5 голов', clearTopBtn: 'Очистить топ', topEmpty: 'Пока нет результатов', topEntry: '{i}) {v} голов'
+      },
+      en: {
+        navGames: 'Games', navHome: 'Home', navArkan: 'Arkan Tartysh', navToguz: 'Toguz Korgool', navJaa: 'Jaa Atuu',
+        title: 'Kok-boru', desc: 'Move with ← ↑ ↓ →. Take the ulak to goal. Rivals get faster over time.',
+        goals: 'Goals: {v}', lives: 'Lives: {v}', timer: 'Time: {v}', best: 'Best: {v}',
+        resetBtn: 'Restart', start: 'Pick the ulak!', takeToGoal: 'Now deliver it to goal!', enemyHit: 'Enemy hit!', goal: 'Goal!', endByLives: 'Game over. Goals: {v}', endByTime: 'Time is up. Goals: {v}', result: 'Result: {v} goals',
+        topTitle: 'Top-5 Goals', clearTopBtn: 'Clear top', topEmpty: 'No results yet', topEntry: '{i}) {v} goals'
+      }
+    };
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    const goalsEl = document.getElementById('goals');
+    const livesEl = document.getElementById('lives');
+    const timerEl = document.getElementById('timer');
+    const bestEl = document.getElementById('best');
+    const statusEl = document.getElementById('status');
+    const resetBtn = document.getElementById('resetBtn');
+    const topList = document.getElementById('topList');
+    const topTitle = document.getElementById('topTitle');
+    const clearTopBtn = document.getElementById('clearTopBtn');
+
+    const bestKey = 'ndn_kok_best_v2';
+    const topKey = 'ndn_kok_top5_v1';
+    let best = Number(localStorage.getItem(bestKey) || 0);
+    let top = JSON.parse(localStorage.getItem(topKey) || '[]');
+
+    let keys = {};
+    let player, goat, enemies, goals, lives, timeLeft, gameOver, last;
+    let scoreSaved = false;
+
+    function tx(k, p) { return NDN.text(T, k, p); }
+
+    function setStaticText() {
+      ['navGames','navHome','navArkan','navToguz','navJaa','title','desc'].forEach((id) => {
+        document.getElementById(id).textContent = tx(id);
+      });
+      resetBtn.textContent = tx('resetBtn');
+      topTitle.textContent = tx('topTitle');
+      clearTopBtn.textContent = tx('clearTopBtn');
+    }
+
+    function renderTop() {
+      topList.innerHTML = '';
+      if (!top.length) {
+        const li = document.createElement('li');
+        li.textContent = tx('topEmpty');
+        topList.appendChild(li);
+        return;
+      }
+      top.forEach((value, idx) => {
+        const li = document.createElement('li');
+        li.textContent = tx('topEntry', { i: idx + 1, v: value });
+        topList.appendChild(li);
+      });
+    }
+
+    function addTop(value) {
+      top.push(Math.max(0, Math.floor(value)));
+      top = top.sort((a, b) => b - a).slice(0, 5);
+      localStorage.setItem(topKey, JSON.stringify(top));
+      renderTop();
+    }
+
+    function rectHit(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function reset() {
+      player = { x: 90, y: 200, w: 24, h: 24, s: 3.0, hasGoat: false };
+      goat = { x: canvas.width / 2 - 8, y: canvas.height / 2 - 8, w: 16, h: 16, taken: false };
+      enemies = [
+        { x: 280, y: 70, w: 22, h: 22, vx: 1.5, vy: 1.2 },
+        { x: 520, y: 280, w: 22, h: 22, vx: -1.7, vy: 1.2 },
+        { x: 680, y: 120, w: 22, h: 22, vx: -1.4, vy: -1.3 }
+      ];
+      goals = 0;
+      lives = 3;
+      timeLeft = 95;
+      gameOver = false;
+      scoreSaved = false;
+      last = performance.now();
+      statusEl.textContent = tx('start');
+      updateHud();
+    }
+
+    function updateHud() {
+      goalsEl.textContent = tx('goals', { v: goals });
+      livesEl.textContent = tx('lives', { v: lives });
+      timerEl.textContent = tx('timer', { v: Math.ceil(timeLeft) });
+      bestEl.textContent = tx('best', { v: best });
+    }
+
+    function loseLife() {
+      if (gameOver) return;
+      lives -= 1;
+      player.x = 90;
+      player.y = 200;
+      player.hasGoat = false;
+      goat.taken = false;
+      goat.x = canvas.width / 2 - 8;
+      goat.y = canvas.height / 2 - 8;
+      statusEl.textContent = tx('enemyHit');
+      if (lives <= 0) {
+        gameOver = true;
+        if (!scoreSaved) {
+          addTop(goals);
+          scoreSaved = true;
+        }
+        statusEl.textContent = tx('endByLives', { v: goals });
+      }
+      updateHud();
+    }
+
+    function update(dt) {
+      if (gameOver) return;
+      timeLeft -= dt;
+      if (timeLeft <= 0) {
+        timeLeft = 0;
+        gameOver = true;
+        if (!scoreSaved) {
+          addTop(goals);
+          scoreSaved = true;
+        }
+        statusEl.textContent = tx('endByTime', { v: goals });
+      }
+
+      if (keys.ArrowUp) player.y -= player.s;
+      if (keys.ArrowDown) player.y += player.s;
+      if (keys.ArrowLeft) player.x -= player.s;
+      if (keys.ArrowRight) player.x += player.s;
+
+      player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
+      player.y = Math.max(0, Math.min(canvas.height - player.h, player.y));
+
+      if (!goat.taken && rectHit(player, goat)) {
+        goat.taken = true;
+        player.hasGoat = true;
+        statusEl.textContent = tx('takeToGoal');
+      }
+
+      const goalZone = { x: canvas.width - 60, y: 150, w: 50, h: 120 };
+      if (player.hasGoat && rectHit(player, goalZone)) {
+        goals += 1;
+        player.hasGoat = false;
+        goat.taken = false;
+        goat.x = canvas.width / 2 - 8;
+        goat.y = canvas.height / 2 - 8;
+        statusEl.textContent = tx('goal');
+        if (goals > best) {
+          best = goals;
+          localStorage.setItem(bestKey, String(best));
+        }
+      }
+
+      const difficulty = 1 + ((95 - timeLeft) / 95) * 0.65;
+      enemies.forEach((e) => {
+        const speedBoost = player.hasGoat ? 0.35 : 0.1;
+        if (Math.random() < 0.03) {
+          const dx = player.x - e.x;
+          const dy = player.y - e.y;
+          const len = Math.max(1, Math.hypot(dx, dy));
+          e.vx += (dx / len) * (0.45 + speedBoost);
+          e.vy += (dy / len) * (0.45 + speedBoost);
+        }
+
+        const cap = 2.2 * difficulty;
+        e.vx = Math.max(-cap, Math.min(cap, e.vx));
+        e.vy = Math.max(-cap, Math.min(cap, e.vy));
+
+        e.x += e.vx;
+        e.y += e.vy;
+        e.vx *= 0.986;
+        e.vy *= 0.986;
+
+        if (e.x <= 0 || e.x + e.w >= canvas.width) e.vx *= -1;
+        if (e.y <= 0 || e.y + e.h >= canvas.height) e.vy *= -1;
+
+        if (rectHit(player, e)) loseLife();
+      });
+
+      updateHud();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#cfe8b4';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = '#88aa66';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 20);
+      ctx.lineTo(canvas.width / 2, canvas.height - 20);
+      ctx.stroke();
+
+      ctx.fillStyle = '#e8d0a0';
+      ctx.fillRect(canvas.width - 60, 150, 50, 120);
+      ctx.strokeStyle = '#8c5b2d';
+      ctx.strokeRect(canvas.width - 60, 150, 50, 120);
+
+      if (!goat.taken) {
+        ctx.fillStyle = '#5a3a1f';
+        ctx.fillRect(goat.x, goat.y, goat.w, goat.h);
+      }
+
+      ctx.fillStyle = player.hasGoat ? '#8c3f21' : '#2d6a4f';
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+
+      ctx.fillStyle = '#2b3d66';
+      enemies.forEach((e) => ctx.fillRect(e.x, e.y, e.w, e.h));
+
+      if (gameOver) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 30px Segoe UI';
+        ctx.fillText(tx('result', { v: goals }), 300, 200);
+      }
+    }
+
+    function loop(now) {
+      const dt = Math.min(0.033, (now - last) / 1000);
+      last = now;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('keydown', (e) => keys[e.key] = true);
+    window.addEventListener('keyup', (e) => keys[e.key] = false);
+    resetBtn.addEventListener('click', reset);
+    clearTopBtn.addEventListener('click', () => {
+      top = [];
+      localStorage.setItem(topKey, JSON.stringify(top));
+      renderTop();
+    });
+
+    NDN.mountLang('langSwitch', () => {
+      setStaticText();
+      updateHud();
+      renderTop();
+      if (!gameOver) statusEl.textContent = tx('start');
+    });
+
+    setStaticText();
+    renderTop();
+    reset();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

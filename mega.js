@@ -33,6 +33,11 @@ const profileDate = document.getElementById('profileDate');
 const daysRegistered = document.getElementById('daysRegistered');
 const gamesPlayed = document.getElementById('gamesPlayed');
 const lastLogin = document.getElementById('lastLogin');
+const profileLevel = document.getElementById('profileLevel');
+const profileXP = document.getElementById('profileXP');
+const profileRankTitle = document.getElementById('profileRankTitle');
+const profileXPFill = document.getElementById('profileXPFill');
+const profileAchievements = document.getElementById('profileAchievements');
 const changeUsernameBtn = document.getElementById('changeUsernameBtn');
 const changePasswordBtn = document.getElementById('changePasswordBtn');
 const exportDataBtn = document.getElementById('exportDataBtn');
@@ -1370,8 +1375,16 @@ function updateProfileData() {
     // Получаем данные пользователя из storage
     const user = tempStorage.findUserByEmail(userData.email);
     if (user) {
-        gamesPlayed.textContent = user.gamesPlayed || 0;
-        
+        const arkanRecord = JSON.parse(localStorage.getItem('ndn_arkan_record_v2') || '{"left":0,"right":0}');
+        const toguzRecord = JSON.parse(localStorage.getItem('ndn_toguz_record_v2') || '{"p1":0,"p2":0}');
+        const jaaBest = Number(localStorage.getItem('ndn_jaa_best_v2') || 0);
+        const kokBest = Number(localStorage.getItem('ndn_kok_best_v2') || 0);
+
+        const arkanWins = (arkanRecord.left || 0) + (arkanRecord.right || 0);
+        const toguzWins = (toguzRecord.p1 || 0) + (toguzRecord.p2 || 0);
+        const computedPlayed = arkanWins + toguzWins + (jaaBest > 0 ? 1 : 0) + (kokBest > 0 ? 1 : 0);
+        gamesPlayed.textContent = Math.max(user.gamesPlayed || 0, computedPlayed);
+
         if (user.lastLogin) {
             const lastLoginDate = new Date(user.lastLogin);
             const today = new Date();
@@ -1383,6 +1396,40 @@ function updateProfileData() {
             } else {
                 lastLogin.textContent = `${diffDays} ${languageManager.getText('daysAgo')}`;
             }
+        }
+
+        if (profileLevel && profileXP && profileRankTitle && profileXPFill && profileAchievements) {
+            const xp = (arkanWins * 20) + (toguzWins * 25) + (jaaBest * 8) + (kokBest * 30);
+            const levelSize = 120;
+            const level = Math.floor(xp / levelSize) + 1;
+            const levelProgress = Math.floor((xp % levelSize) / levelSize * 100);
+
+            let rank = 'Nomad';
+            if (xp >= 1500) rank = 'Legend';
+            else if (xp >= 900) rank = 'Master';
+            else if (xp >= 450) rank = 'Hunter';
+            else if (xp >= 180) rank = 'Rider';
+
+            profileLevel.textContent = `Level ${level}`;
+            profileXP.textContent = `${xp} XP`;
+            profileRankTitle.textContent = rank;
+            profileXPFill.style.width = `${Math.max(0, Math.min(100, levelProgress))}%`;
+
+            const badges = [
+                { title: 'Arkan Starter', unlocked: arkanWins >= 3 },
+                { title: 'Toguz Strategist', unlocked: toguzWins >= 3 },
+                { title: 'Sharp Archer', unlocked: jaaBest >= 40 },
+                { title: 'Kok-boru Captain', unlocked: kokBest >= 5 },
+                { title: 'Steppe Legend', unlocked: xp >= 800 }
+            ];
+
+            profileAchievements.innerHTML = '';
+            badges.forEach((badge) => {
+                const badgeEl = document.createElement('span');
+                badgeEl.className = `badge-item${badge.unlocked ? ' unlocked' : ''}`;
+                badgeEl.textContent = badge.unlocked ? `✓ ${badge.title}` : `• ${badge.title}`;
+                profileAchievements.appendChild(badgeEl);
+            });
         }
     }
 }
@@ -1727,10 +1774,10 @@ window.startGame = function(gameType) {
     const gameLinks = {
         kochmon: 'https://nurel077.github.io/NDN_games/',
         flappy: 'https://nurel077.github.io/flappy_bird/',
-        arkan: 'index.html#arkan',
-        toguz: 'index.html#toguz',
-        jaa: 'index.html#jaa',
-        kok: 'index.html#kok'
+        arkan: 'arkan-tartysh.html',
+        toguz: 'toguz-korgool.html',
+        jaa: 'jaa-atuu.html',
+        kok: 'kok-boru.html'
     };
 
     if (!gameLinks[gameType]) {
@@ -2216,6 +2263,7 @@ class GameReturnManager {
 
 // Инициализируем систему отслеживания возврата с игр
 const gameReturnManager = new GameReturnManager();
+
 
 
 

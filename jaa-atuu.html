@@ -1,0 +1,298 @@
+﻿<!DOCTYPE html>
+<html lang="ky">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Жаа атуу</title>
+  <link rel="stylesheet" href="games-theme.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand" id="brand">Жаа атуу</div>
+      <nav class="nav">
+        <a href="games.html" id="navGames">Оюндар</a>
+        <a href="index.html" id="navHome">Башкы бет</a>
+        <a href="arkan-tartysh.html" id="navArkan">Аркан тартыш</a>
+        <a href="toguz-korgool.html" id="navToguz">Тогуз коргоол</a>
+        <a href="kok-boru.html" id="navKok">Кок-бору</a>
+      </nav>
+      <div class="lang-switch" id="langSwitch"></div>
+    </header>
+
+    <section class="game-wrap">
+      <div class="game-head">
+        <h1 id="title">Жаа атуу</h1>
+        <p id="desc">Курсорду тартып багыт жана күч бериңиз. Шамал өзгөрүп турат, бута ылдамдайт.</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat" id="score"></div>
+        <div class="stat" id="arrows"></div>
+        <div class="stat" id="wind"></div>
+        <div class="stat" id="best"></div>
+      </div>
+
+      <div class="panel">
+        <canvas id="c" width="860" height="400"></canvas>
+        <div class="controls">
+          <button id="resetBtn"></button>
+          <strong id="status"></strong>
+        </div>
+        <div class="leaderboard">
+          <h3 id="topTitle"></h3>
+          <ol id="topList"></ol>
+          <div class="controls">
+            <button id="clearTopBtn"></button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="games-i18n.js"></script>
+  <script>
+    const T = {
+      ky: {
+        navGames: 'Оюндар', navHome: 'Башкы бет', navArkan: 'Аркан тартыш', navToguz: 'Тогуз коргоол', navKok: 'Кок-бору',
+        title: 'Жаа атуу', desc: 'Курсорду тартып багыт жана күч бериңиз. Шамал өзгөрүп турат, бута ылдамдайт.',
+        score: 'Упай: {v}', arrows: 'Жебе: {v}', wind: 'Шамал: {v}', best: 'Эң мыкты: {v}',
+        resetBtn: 'Кайра баштоо', start: 'Бутагa сок!', hit: 'Так тийди!', miss: 'Өтпөй калды', end: 'Оюн бүттү. Упай: {v}',
+        topTitle: 'Топ-5 упай', clearTopBtn: 'Топту тазалоо', topEmpty: 'Азырынча жыйынтык жок', topEntry: '{i}) {v} упай'
+      },
+      ru: {
+        navGames: 'Игры', navHome: 'Главная', navArkan: 'Аркан тартыш', navToguz: 'Тогуз коргоол', navKok: 'Кок-бору',
+        title: 'Жаа атуу', desc: 'Тяни курсор для силы и угла. Ветер меняется, цель ускоряется.',
+        score: 'Очки: {v}', arrows: 'Стрелы: {v}', wind: 'Ветер: {v}', best: 'Лучший: {v}',
+        resetBtn: 'Перезапуск', start: 'Попади в цель!', hit: 'Точное попадание!', miss: 'Промах', end: 'Игра окончена. Очки: {v}',
+        topTitle: 'Топ-5 очков', clearTopBtn: 'Очистить топ', topEmpty: 'Пока нет результатов', topEntry: '{i}) {v} очков'
+      },
+      en: {
+        navGames: 'Games', navHome: 'Home', navArkan: 'Arkan Tartysh', navToguz: 'Toguz Korgool', navKok: 'Kok-boru',
+        title: 'Jaa Atuu', desc: 'Drag to set force and angle. Wind changes and target speed scales up.',
+        score: 'Score: {v}', arrows: 'Arrows: {v}', wind: 'Wind: {v}', best: 'Best: {v}',
+        resetBtn: 'Restart', start: 'Hit the target!', hit: 'Bullseye hit!', miss: 'Missed', end: 'Game over. Score: {v}',
+        topTitle: 'Top-5 Scores', clearTopBtn: 'Clear top', topEmpty: 'No results yet', topEntry: '{i}) {v} pts'
+      }
+    };
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const arrowsEl = document.getElementById('arrows');
+    const windEl = document.getElementById('wind');
+    const bestEl = document.getElementById('best');
+    const statusEl = document.getElementById('status');
+    const resetBtn = document.getElementById('resetBtn');
+    const topList = document.getElementById('topList');
+    const topTitle = document.getElementById('topTitle');
+    const clearTopBtn = document.getElementById('clearTopBtn');
+
+    const bestKey = 'ndn_jaa_best_v2';
+    const topKey = 'ndn_jaa_top5_v1';
+    let best = Number(localStorage.getItem(bestKey) || 0);
+    let top = JSON.parse(localStorage.getItem(topKey) || '[]');
+
+    const bow = { x: 90, y: 320 };
+    let target = { x: 690, y: 180, r: 52, vx: 1.2 };
+    let arrow = null;
+    let aiming = false;
+    let aim = { x: bow.x, y: bow.y };
+    let score = 0;
+    let arrows = 12;
+    let wind = 0;
+    let scoreSaved = false;
+
+    function tx(k, p) { return NDN.text(T, k, p); }
+
+    function setStaticText() {
+      ['navGames','navHome','navArkan','navToguz','navKok','title','desc'].forEach((id) => {
+        document.getElementById(id).textContent = tx(id);
+      });
+      resetBtn.textContent = tx('resetBtn');
+      topTitle.textContent = tx('topTitle');
+      clearTopBtn.textContent = tx('clearTopBtn');
+    }
+
+    function renderTop() {
+      topList.innerHTML = '';
+      if (!top.length) {
+        const li = document.createElement('li');
+        li.textContent = tx('topEmpty');
+        topList.appendChild(li);
+        return;
+      }
+      top.forEach((value, idx) => {
+        const li = document.createElement('li');
+        li.textContent = tx('topEntry', { i: idx + 1, v: value });
+        topList.appendChild(li);
+      });
+    }
+
+    function addTop(value) {
+      top.push(Math.max(0, Math.floor(value)));
+      top = top.sort((a, b) => b - a).slice(0, 5);
+      localStorage.setItem(topKey, JSON.stringify(top));
+      renderTop();
+    }
+
+    function updateHud() {
+      scoreEl.textContent = tx('score', { v: score });
+      arrowsEl.textContent = tx('arrows', { v: arrows });
+      windEl.textContent = tx('wind', { v: wind.toFixed(2) });
+      bestEl.textContent = tx('best', { v: best });
+    }
+
+    function reset() {
+      score = 0;
+      arrows = 12;
+      arrow = null;
+      aiming = false;
+      target.x = 690;
+      target.vx = 1.2;
+      wind = (Math.random() * 2 - 1) * 0.07;
+      scoreSaved = false;
+      statusEl.textContent = tx('start');
+      updateHud();
+    }
+
+    function pos(e) {
+      const r = canvas.getBoundingClientRect();
+      return {
+        x: (e.clientX - r.left) * (canvas.width / r.width),
+        y: (e.clientY - r.top) * (canvas.height / r.height)
+      };
+    }
+
+    function fire(p) {
+      if (arrow || arrows <= 0) return;
+      const dx = bow.x - p.x;
+      const dy = bow.y - p.y;
+      const power = Math.min(24, Math.hypot(dx, dy) / 5);
+      arrow = { x: bow.x, y: bow.y, vx: (dx / 11) * (power / 5), vy: (dy / 11) * (power / 5) };
+      arrows -= 1;
+      wind = (Math.random() * 2 - 1) * 0.07;
+      updateHud();
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      aiming = true;
+      aim = pos(e);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!aiming) return;
+      aim = pos(e);
+    });
+
+    canvas.addEventListener('pointerup', (e) => {
+      if (!aiming) return;
+      aiming = false;
+      fire(pos(e));
+    });
+
+    function drawTarget() {
+      const colors = ['#c0392b', '#f7dc6f', '#2874a6', '#fdfefe'];
+      [52, 38, 24, 12].forEach((r, i) => {
+        ctx.beginPath();
+        ctx.fillStyle = colors[i];
+        ctx.arc(target.x, target.y, r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function loop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#d6ebc2';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#d2bc94';
+      ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+
+      // Balanced difficulty ramp: target gets slightly faster with score
+      target.x += target.vx + Math.min(1.6, score * 0.02) * Math.sign(target.vx);
+      if (target.x > 790 || target.x < 530) target.vx *= -1;
+      drawTarget();
+
+      ctx.strokeStyle = '#5a3a1f';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(bow.x, bow.y, 28, Math.PI / 2, Math.PI * 1.5);
+      ctx.stroke();
+
+      if (aiming) {
+        ctx.strokeStyle = '#1f4d3a';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(bow.x, bow.y);
+        ctx.lineTo(aim.x, aim.y);
+        ctx.stroke();
+      }
+
+      if (arrow) {
+        arrow.x += arrow.vx;
+        arrow.y += arrow.vy;
+        arrow.vx += wind;
+        arrow.vy += 0.08;
+
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(arrow.x, arrow.y);
+        ctx.lineTo(arrow.x - 18, arrow.y - 3);
+        ctx.stroke();
+
+        const d = Math.hypot(arrow.x - target.x, arrow.y - target.y);
+        if (d <= target.r) {
+          if (d <= 12) score += 12;
+          else if (d <= 24) score += 8;
+          else if (d <= 38) score += 5;
+          else score += 3;
+
+          if (score > best) {
+            best = score;
+            localStorage.setItem(bestKey, String(best));
+          }
+
+          statusEl.textContent = tx('hit');
+          arrow = null;
+          updateHud();
+        }
+
+        if (arrow && (arrow.x > canvas.width || arrow.y > canvas.height || arrow.x < 0)) {
+          statusEl.textContent = tx('miss');
+          arrow = null;
+        }
+      }
+
+      if (arrows === 0 && !arrow) {
+        if (!scoreSaved) {
+          addTop(score);
+          scoreSaved = true;
+        }
+        statusEl.textContent = tx('end', { v: score });
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    resetBtn.addEventListener('click', reset);
+    clearTopBtn.addEventListener('click', () => {
+      top = [];
+      localStorage.setItem(topKey, JSON.stringify(top));
+      renderTop();
+    });
+    NDN.mountLang('langSwitch', () => {
+      setStaticText();
+      updateHud();
+      renderTop();
+      if (arrows > 0) statusEl.textContent = tx('start');
+      else statusEl.textContent = tx('end', { v: score });
+    });
+
+    setStaticText();
+    renderTop();
+    reset();
+    loop();
+  </script>
+</body>
+</html>
