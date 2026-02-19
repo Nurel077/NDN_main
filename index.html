@@ -209,15 +209,15 @@
 
     <section class="panel" id="toguz">
       <div class="card">
-        <h2>Тогуз коргоол (упрощённо)</h2>
-        <p class="small">2 игрока по очереди. Клик по своей лунке: камни раскладываются по кругу. Если последний камень попал в лунку соперника и стало чётное количество - забираешь их в казан.</p>
+        <h2>Тогуз коргоол</h2>
+        <p class="small">2 игрока по очереди. Клик по лунке: камни раскладываются по кругу. При четном количестве в лунке соперника - забираешь их в казан. Туздүк - захват противоположной линии (ограниченно).</p>
         <p class="small" id="toguzRecord"></p>
         <div class="score-box">
           <div class="score" id="turnLabel">Жүрүш: 1-оюнчу</div>
           <div class="score" id="scoreP1">Казан 1: 0</div>
           <div class="score" id="scoreP2">Казан 2: 0</div>
         </div>
-        <div class="toguz-grid" id="toguzBoard"></div>
+        <canvas id="toguzCanvas" width="780" height="480" style="border: 1px solid var(--line); border-radius: 12px; background: #fff; display: block; margin: 12px 0;"></canvas>
         <div class="row">
           <button id="toguzReset">Жаңы оюн</button>
           <strong id="toguzStatus">Оюн жүрүп жатат</strong>
@@ -363,8 +363,9 @@
     drawRope();
     updateArkanRecord();
 
-    // 2) Toguz korgool (simplified)
-    const boardEl = document.getElementById('toguzBoard');
+    // 2) Toguz korgool (improved with circular layout)
+    const toguzCanvas = document.getElementById('toguzCanvas');
+    const toguzCtx = toguzCanvas.getContext('2d');
     const turnLabel = document.getElementById('turnLabel');
     const scoreP1El = document.getElementById('scoreP1');
     const scoreP2El = document.getElementById('scoreP2');
@@ -372,104 +373,213 @@
     const toguzRecordEl = document.getElementById('toguzRecord');
     const toguzReset = document.getElementById('toguzReset');
 
-    let pits = [];
-    let turn = 1;
-    let score1 = 0;
-    let score2 = 0;
-    let toguzOver = false;
+    // Game state
+    let toguzState = {
+      pits: new Array(18).fill(9),
+      stores: [0, 0], // каза́н 1 и 2
+      turn: 0, // 0 = player 1, 1 = player 2
+      gameOver: false,
+      records: { p1: 0, p2: 0 }
+    };
 
-    function initToguz() {
-      pits = new Array(18).fill(9);
-      turn = 1;
-      score1 = 0;
-      score2 = 0;
-      toguzOver = false;
-      toguzStatus.textContent = 'Оюн жүрүп жатат';
-      renderToguz();
+    // Canvas geometry
+    const toguzBoard = {
+      centerX: 390,
+      centerY: 240,
+      pitRadius: 25,
+      outerRadius: 180,
+      storeRadius: 35
+    };
+
+    function getPitPosition(index) {
+      const angle = (index / 18) * Math.PI * 2;
+      const x = toguzBoard.centerX + Math.cos(angle - Math.PI/2) * toguzBoard.outerRadius;
+      const y = toguzBoard.centerY + Math.sin(angle - Math.PI/2) * toguzBoard.outerRadius;
+      return { x, y };
     }
 
-    function sideOf(index) {
-      return index < 9 ? 1 : 2;
+    function getStorePosition(player) {
+      return player === 0 
+        ? { x: toguzBoard.centerX - 120, y: toguzBoard.centerY }
+        : { x: toguzBoard.centerX + 120, y: toguzBoard.centerY };
+    }
+
+    function getPitAtPoint(mx, my) {
+      for (let i = 0; i < 18; i++) {
+        const pit = getPitPosition(i);
+        const dist = Math.hypot(mx - pit.x, my - pit.y);
+        if (dist <= toguzBoard.pitRadius) return i;
+      }
+      return -1;
     }
 
     function updateToguzRecord() {
-      const rec = Records.get('toguz') || { p1: 0, p2: 0 };
-      toguzRecordEl.textContent = `📊 Рекордтор: 1-оюнчу ${rec.p1}, 2-оюнчу ${rec.p2}`;
+      toguzState.records = Records.get('toguz') || { p1: 0, p2: 0 };
+      toguzRecordEl.textContent = `📊 Рекордтор: 1-оюнчу ${toguzState.records.p1}, 2-оюнчу ${toguzState.records.p2}`;
     }
 
-    function renderToguz() {
-      boardEl.innerHTML = '';
-      for (let i = 0; i < pits.length; i++) {
-        const btn = document.createElement('button');
-        btn.className = 'pit';
-        const pitOwner = sideOf(i);
-        if (pitOwner !== turn || pits[i] === 0 || toguzOver) {
-          btn.classList.add('disabled');
-        }
-        btn.textContent = `${i + 1}\n${pits[i]}`;
-        btn.title = pitOwner === 1 ? '1-оюнчу' : '2-оюнчу';
-        btn.addEventListener('click', () => playPit(i));
-        boardEl.appendChild(btn);
+    function drawToguzBoard() {
+      toguzCtx.clearRect(0, 0, toguzCanvas.width, toguzCanvas.height);
+
+      // Background
+      toguzCtx.fillStyle = '#f0e8d8';
+      toguzCtx.fillRect(0, 0, toguzCanvas.width, toguzCanvas.height);
+
+      // Draw circle guide
+      toguzCtx.strokeStyle = '#d9cdb9';
+      toguzCtx.lineWidth = 2;
+      toguzCtx.beginPath();
+      toguzCtx.arc(toguzBoard.centerX, toguzBoard.centerY, toguzBoard.outerRadius, 0, Math.PI * 2);
+      toguzCtx.stroke();
+
+      // Draw stores
+      for (let p = 0; p < 2; p++) {
+        const store = getStorePosition(p);
+        toguzCtx.fillStyle = p === 0 ? '#2f6b52' : '#b24b2a';
+        toguzCtx.fillRect(store.x - toguzBoard.storeRadius, store.y - toguzBoard.storeRadius * 1.5,
+          toguzBoard.storeRadius * 2, toguzBoard.storeRadius * 3);
+        toguzCtx.fillStyle = '#fff';
+        toguzCtx.font = 'bold 18px Segoe UI';
+        toguzCtx.textAlign = 'center';
+        toguzCtx.fillText(toguzState.stores[p], store.x, store.y + 5);
       }
-      turnLabel.textContent = `Жүрүш: ${turn}-оюнчу`;
-      scoreP1El.textContent = `Казан 1: ${score1}`;
-      scoreP2El.textContent = `Казан 2: ${score2}`;
+
+      // Draw pits
+      for (let i = 0; i < 18; i++) {
+        const pos = getPitPosition(i);
+        const isPlayer1 = i < 9;
+        const isCurrentPlayer = (isPlayer1 && toguzState.turn === 0) || (!isPlayer1 && toguzState.turn === 1);
+        const canPlayNow = isCurrentPlayer && toguzState.pits[i] > 0 && !toguzState.gameOver;
+
+        toguzCtx.fillStyle = canPlayNow ? '#fff' : '#efefef';
+        toguzCtx.beginPath();
+        toguzCtx.arc(pos.x, pos.y, toguzBoard.pitRadius, 0, Math.PI * 2);
+        toguzCtx.fill();
+
+        // Border
+        toguzCtx.strokeStyle = isPlayer1 ? '#2f6b52' : '#b24b2a';
+        toguzCtx.lineWidth = 3;
+        toguzCtx.stroke();
+
+        // Text
+        toguzCtx.fillStyle = '#222';
+        toguzCtx.font = 'bold 16px Segoe UI';
+        toguzCtx.textAlign = 'center';
+        toguzCtx.textBaseline = 'middle';
+        toguzCtx.fillText(toguzState.pits[i], pos.x, pos.y);
+      }
+
+      // Status bar
+      turnLabel.textContent = `Жүрүш: ${toguzState.turn === 0 ? '1' : '2'}-оюнчу`;
+      scoreP1El.textContent = `Казан 1: ${toguzState.stores[0]}`;
+      scoreP2El.textContent = `Казан 2: ${toguzState.stores[1]}`;
     }
 
-    function checkToguzEnd() {
-      const sum1 = pits.slice(0, 9).reduce((a, b) => a + b, 0);
-      const sum2 = pits.slice(9).reduce((a, b) => a + b, 0);
-      if (sum1 === 0 || sum2 === 0) {
-        score1 += sum1;
-        score2 += sum2;
-        pits = new Array(18).fill(0);
-        toguzOver = true;
-        const rec = Records.get('toguz') || { p1: 0, p2: 0 };
-        if (score1 > score2) {
-          toguzStatus.textContent = '1-оюнчу жеңди';
-          rec.p1 = Math.max(rec.p1, score1);
-        } else if (score2 > score1) {
-          toguzStatus.textContent = '2-оюнчу жеңди';
-          rec.p2 = Math.max(rec.p2, score2);
-        } else {
-          toguzStatus.textContent = 'Тең чыкты';
+    function distributeStones(pitIndex) {
+      let stones = toguzState.pits[pitIndex];
+      toguzState.pits[pitIndex] = 0;
+      let currentPit = pitIndex;
+
+      while (stones > 0) {
+        currentPit = (currentPit + 1) % 18;
+        toguzState.pits[currentPit]++;
+        stones--;
+      }
+
+      return currentPit;
+    }
+
+    function checkCapture(lastPit) {
+      const isPlayer1 = toguzState.turn === 0;
+      const player1Pits = isPlayer1;
+
+      // Проверяем, находится ли последний камень в своей территории
+      if ((player1Pits && lastPit < 9) || (!player1Pits && lastPit >= 9)) {
+        // Если четное количество - захватываем
+        if (toguzState.pits[lastPit] % 2 === 0) {
+          const captured = toguzState.pits[lastPit];
+          toguzState.pits[lastPit] = 0;
+          toguzState.stores[toguzState.turn] += captured;
+
+          // Туздүк: попробуем захватить противоположную сторону
+          const oppositePit = 17 - lastPit;
+          if (toguzState.pits[oppositePit] > 0 && (toguzState.stores[toguzState.turn] >= 81 || toguzState.stores[toguzState.turn] <= 81)) {
+            const opp = toguzState.pits[oppositePit];
+            toguzState.pits[oppositePit] = 0;
+            toguzState.stores[toguzState.turn] += opp;
+          }
         }
-        Records.set('toguz', rec);
+      }
+    }
+
+    function checkGameEnd() {
+      const isEmpty1 = toguzState.pits.slice(0, 9).reduce((a, b) => a + b, 0) === 0;
+      const isEmpty2 = toguzState.pits.slice(9).reduce((a, b) => a + b, 0) === 0;
+
+      if (isEmpty1 || isEmpty2) {
+        // Собираем оставшиеся камни
+        toguzState.stores[0] += toguzState.pits.slice(0, 9).reduce((a, b) => a + b, 0);
+        toguzState.stores[1] += toguzState.pits.slice(9).reduce((a, b) => a + b, 0);
+        toguzState.pits = new Array(18).fill(0);
+        toguzState.gameOver = true;
+
+        // Обновляем рекорды
+        const records = toguzState.records;
+        if (toguzState.stores[0] > toguzState.stores[1]) {
+          toguzStatus.textContent = '1-оюнчу жеңди!';
+          records.p1 = Math.max(records.p1, toguzState.stores[0]);
+        } else if (toguzState.stores[1] > toguzState.stores[0]) {
+          toguzStatus.textContent = '2-оюнчу жеңди!';
+          records.p2 = Math.max(records.p2, toguzState.stores[1]);
+        } else {
+          toguzStatus.textContent = 'Тең чыкты!';
+        }
+        Records.set('toguz', records);
         updateToguzRecord();
       }
     }
 
-    function playPit(index) {
-      if (toguzOver) return;
-      if (sideOf(index) !== turn) return;
-      let stones = pits[index];
-      if (stones === 0) return;
-      pits[index] = 0;
+    function playToguz(pitIndex) {
+      if (toguzState.gameOver) return;
 
-      let pos = index;
-      while (stones > 0) {
-        pos = (pos + 1) % pits.length;
-        pits[pos] += 1;
-        stones -= 1;
+      const isPlayer1 = toguzState.turn === 0;
+      const isPitValid = (isPlayer1 && pitIndex < 9) || (!isPlayer1 && pitIndex >= 9);
+
+      if (!isPitValid || toguzState.pits[pitIndex] === 0) return;
+
+      const lastPit = distributeStones(pitIndex);
+      checkCapture(lastPit);
+      checkGameEnd();
+
+      if (!toguzState.gameOver) {
+        toguzState.turn = 1 - toguzState.turn;
       }
 
-      // Simplified capture rule
-      const landingSide = sideOf(pos);
-      if (landingSide !== turn && pits[pos] % 2 === 0) {
-        const captured = pits[pos];
-        pits[pos] = 0;
-        if (turn === 1) score1 += captured;
-        else score2 += captured;
-      }
-
-      checkToguzEnd();
-      if (!toguzOver) turn = turn === 1 ? 2 : 1;
-      renderToguz();
+      drawToguzBoard();
     }
+
+    function initToguz() {
+      toguzState.pits = new Array(18).fill(9);
+      toguzState.stores = [0, 0];
+      toguzState.turn = 0;
+      toguzState.gameOver = false;
+      toguzStatus.textContent = 'Оюн жүрүп жатат';
+      updateToguzRecord();
+      drawToguzBoard();
+    }
+
+    toguzCanvas.addEventListener('click', (e) => {
+      const rect = toguzCanvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (toguzCanvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (toguzCanvas.height / rect.height);
+      const pitIndex = getPitAtPoint(x, y);
+      if (pitIndex >= 0) {
+        playToguz(pitIndex);
+      }
+    });
 
     toguzReset.addEventListener('click', initToguz);
     initToguz();
-    updateToguzRecord();
 
     // 3) Jaa atuu (archery)
     const archeryCanvas = document.getElementById('archeryCanvas');
