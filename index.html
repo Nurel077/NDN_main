@@ -1,355 +1,765 @@
-<!DOCTYPE html>
-<html lang="ky">
+﻿<!DOCTYPE html>
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Көчмөн Ордо - Кыргыз оюн дүкөнү</title>
-    <link rel="stylesheet" href="mega.css">
-    <link href="https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&family=Philosopher:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Кыргыз Оюндары - 4 мини-игры</title>
+  <style>
+    :root {
+      --bg: #f7f2e8;
+      --surface: #fffdf8;
+      --ink: #222;
+      --accent: #b24b2a;
+      --accent-2: #2f6b52;
+      --line: #d9cdb9;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 20% 20%, #fff6e8 0%, var(--bg) 45%, #e8dcc6 100%);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      width: min(980px, 94vw);
+      margin: 24px auto;
+      background: color-mix(in srgb, var(--surface) 90%, #fff 10%);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.08);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.5rem, 3vw, 2.2rem);
+    }
+
+    .lead {
+      margin: 0 0 16px;
+      color: #444;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .tab {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      padding: 14px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin: 10px 0;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      background: var(--accent-2);
+      color: #fff;
+    }
+
+    button.alt { background: var(--accent); }
+
+    .meter {
+      width: 100%;
+      max-width: 560px;
+      height: 26px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #eee4d2;
+      position: relative;
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 50%;
+      background: linear-gradient(90deg, #2f6b52 0%, #2f6b52 50%, #b24b2a 50%, #b24b2a 100%);
+      transition: width .05s linear;
+    }
+
+    .small { color: #555; font-size: .95rem; }
+
+    .toguz-grid {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(0,1fr));
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .pit {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f7f1e4;
+      min-height: 62px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-weight: 700;
+      padding: 4px;
+      text-align: center;
+    }
+
+    .pit:hover { background: #efe6d3; }
+
+    .pit.disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .score-box {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .score {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #faf6ee;
+      font-weight: 700;
+    }
+
+    canvas {
+      width: 100%;
+      max-width: 780px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      display: block;
+    }
+
+    .kbd {
+      border: 1px solid #bbb;
+      background: #f4f4f4;
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: .85rem;
+    }
+
+    @media (max-width: 760px) {
+      .tabs { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-gamepad"></i>
-                    <h1>Көчмөн Ордо</h1>
-                </div>
-                <nav class="nav">
-                    <a href="games.html" class="nav-link">Оюндар</a>
-                    <a href="about.html" class="nav-link">Биз жөнүндө</a>
-                    <a href="contacts.html" class="nav-link">Байланыш</a>
-                </nav>
+  <main class="wrap">
+    <h1>Кыргыз салттуу оюндары</h1>
+    <p class="lead">4 мини-игры на <code>HTML/CSS/JS</code>: Аркан тартыш, Тогуз коргоол, Жаа атуу, Кок-бору.</p>
 
-                <button class="btn btn-secondary profile-header-btn" id="profileBtn" style="display: none;">
-                    <i class="fas fa-user-cog"></i>
-                    Профиль
-                </button>
+    <section class="tabs" id="tabs">
+      <button class="tab active" data-target="arkan">Аркан тартыш</button>
+      <button class="tab" data-target="toguz">Тогуз коргоол</button>
+      <button class="tab" data-target="jaa">Жаа атуу</button>
+      <button class="tab" data-target="kok">Кок-бору</button>
+    </section>
 
-                <button class="btn btn-secondary user-menu-btn" id="userMenuBtn" style="display: none;">
-                    <i class="fas fa-user"></i>
-                </button>
+    <section class="panel active" id="arkan">
+      <div class="card">
+        <h2>Аркан тартыш</h2>
+        <p class="small">Нажимай <span class="kbd">A</span> для сол команды, <span class="kbd">L</span> для правой. Кто перетянет до края - победил.</p>
+        <p class="small" id="arkanRecord"></p>
+        <div class="meter"><div class="meter-fill" id="ropeFill"></div></div>
+        <div class="row">
+          <button id="leftPull">Сол команда (A)</button>
+          <button class="alt" id="rightPull">Оң команда (L)</button>
+          <button id="arkanReset">Кайра баштоо</button>
+          <strong id="arkanStatus">Башталды</strong>
+        </div>
+      </div>
+    </section>
 
-                <div class="user-menu" id="userMenu" style="display: none;">
-                    <div class="user-info">
-                        <div class="user-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="user-details">
-                            <span class="user-name" id="userName"></span>
-                            <span class="user-email" id="userEmail"></span>
-                        </div>
-                    </div>
-                    <div class="user-actions">
-                        <button class="user-action-btn" id="logoutBtn">
-                            <i class="fas fa-sign-out-alt"></i>
-                            Чыгуу
-                        </button>
-                        <button class="user-action-btn danger" id="deleteAccountMenuBtn">
-                            <i class="fas fa-trash"></i>
-                            Аккаунтту өчүрүү
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
+    <section class="panel" id="toguz">
+      <div class="card">
+        <h2>Тогуз коргоол (упрощённо)</h2>
+        <p class="small">2 игрока по очереди. Клик по своей лунке: камни раскладываются по кругу. Если последний камень попал в лунку соперника и стало чётное количество - забираешь их в казан.</p>
+        <p class="small" id="toguzRecord"></p>
+        <div class="score-box">
+          <div class="score" id="turnLabel">Жүрүш: 1-оюнчу</div>
+          <div class="score" id="scoreP1">Казан 1: 0</div>
+          <div class="score" id="scoreP2">Казан 2: 0</div>
+        </div>
+        <div class="toguz-grid" id="toguzBoard"></div>
+        <div class="row">
+          <button id="toguzReset">Жаңы оюн</button>
+          <strong id="toguzStatus">Оюн жүрүп жатат</strong>
+        </div>
+      </div>
+    </section>
 
-        <main class="main">
-            <section class="hero" id="mainPage">
-                <div class="hero-content">
-                    <h2 class="hero-title">Оюн дүйнөсүнө кош келиңиз!</h2>
-                    <p class="hero-description">Кызыктуу оюндарды ачып, унутулгус таасир алыңыз</p>
-                    <div class="hero-buttons">
-                        <button class="btn btn-primary" id="loginBtn">
-                            <i class="fas fa-sign-in-alt"></i>
-                            Кирүү
-                        </button>
-                        <button class="btn btn-secondary" id="playBtn" style="display: none;">
-                            <i class="fas fa-play"></i>
-                            Ойной баштоо
-                        </button>
-                    </div>
+    <section class="panel" id="jaa">
+      <div class="card">
+        <h2>Жаа атуу</h2>
+        <p class="small">Удерживай мышь/палец на поле, тяни для направления и силы, отпускай для выстрела. Попади в мишень за ограниченное число стрел.</p>
+        <p class="small" id="archeryRecord"></p>
+        <canvas id="archeryCanvas" width="780" height="360"></canvas>
+        <div class="row">
+          <div class="score" id="archeryScore">Упай: 0</div>
+          <div class="score" id="archeryArrows">Жебе: 8</div>
+          <button id="archeryReset">Кайра баштоо</button>
+        </div>
+      </div>
+    </section>
 
-                    <div class="auth-forms" id="authForms" style="display: none;">
-                        <div class="auth-tabs">
-                            <button class="auth-tab active" id="loginTab">
-                                <i class="fas fa-sign-in-alt"></i>
-                                Кирүү
-                            </button>
-                            <button class="auth-tab" id="registerTab">
-                                <i class="fas fa-user-plus"></i>
-                                Катталуу
-                            </button>
-                        </div>
+    <section class="panel" id="kok">
+      <div class="card">
+        <h2>Кок-бору (аркада)</h2>
+        <p class="small">Управление: <span class="kbd">← ↑ ↓ →</span>. Забери улак в центре и довези до ворот справа, избегая соперников.</p>
+        <p class="small" id="kokRecord"></p>
+        <canvas id="kokCanvas" width="780" height="360"></canvas>
+        <div class="row">
+          <div class="score" id="kokScore">Голдор: 0</div>
+          <div class="score" id="kokLives">Жашоо: 3</div>
+          <button id="kokReset">Кайра баштоо</button>
+        </div>
+      </div>
+    </section>
+  </main>
 
-                        <div class="auth-form active" id="loginForm">
-                            <h3 id="loginFormTitle">Аккаунтка кирүү</h3>
-                            <form id="loginFormElement">
-                                <div class="form-group">
-                                    <input type="email" id="loginEmail" placeholder="Электрондук почта" required>
-                                </div>
-                                <div class="form-group">
-                                    <input type="password" id="loginPassword" placeholder="Сырсөз" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="remember-me">
-                                        <input type="checkbox" id="rememberMe">
-                                        <span>Мени эстеп кал</span>
-                                    </label>
-                                </div>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-sign-in-alt"></i>
-                                    Кирүү
-                                </button>
-                                <button type="button" class="btn btn-secondary" id="cancelLogin">
-                                    <i class="fas fa-times"></i>
-                                    Жокко чыгаруу
-                                </button>
-                            </form>
-                        </div>
+  <script>
+    // Tabs + URL anchors
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.panel');
+    
+    function switchTab(target) {
+      tabs.forEach(t => {
+        t.classList.toggle('active', t.dataset.target === target);
+      });
+      panels.forEach(p => {
+        p.classList.toggle('active', p.id === target);
+      });
+      window.location.hash = target;
+    }
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        switchTab(tab.dataset.target);
+      });
+    });
+    
+    // Активируем таб по якорю при загрузке или изменении URL
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.slice(1);
+      if (hash && document.getElementById(hash)) {
+        switchTab(hash);
+      }
+    });
+    
+    // Проверяем якорь при загрузке
+    window.addEventListener('load', () => {
+      const hash = window.location.hash.slice(1);
+      if (hash && document.getElementById(hash)) {
+        switchTab(hash);
+      }
+    });
 
-                        <div class="auth-form" id="registerForm">
-                            <h3 id="registerFormTitle">Катталуу</h3>
-                            <form id="regForm">
-                                <div class="form-group">
-                                    <input type="text" id="username" placeholder="Колдонуучу аты" required>
-                                </div>
-                                <div class="form-group">
-                                    <input type="email" id="email" placeholder="Электрондук почта" required>
-                                </div>
-                                <div class="form-group">
-                                    <input type="password" id="password" placeholder="Сырсөз" required>
-                                    <div class="password-strength" id="passwordStrength">
-                                        <div class="strength-bar">
-                                            <div class="strength-fill" id="strengthFill"></div>
-                                        </div>
-                                        <div class="strength-text" id="strengthText">Сырсөздү киргизиңиз</div>
-                                    </div>
-                                    <div class="password-requirements" id="passwordRequirements">
-                                        <div class="requirement" id="req-length">Кеминде 8 белги</div>
-                                        <div class="requirement" id="req-uppercase">Баш тамга</div>
-                                        <div class="requirement" id="req-lowercase">Кичине тамга</div>
-                                        <div class="requirement" id="req-number">Сан</div>
-                                        <div class="requirement" id="req-special">Атайын белги</div>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <input type="password" id="confirmPassword" placeholder="Сырсөздү ырастаңыз" required>
-                                    <div class="password-match" id="passwordMatch"></div>
-                                </div>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-user-plus"></i>
-                                    Катталуу
-                                </button>
-                                <button type="button" class="btn btn-secondary" id="cancelReg">
-                                    <i class="fas fa-times"></i>
-                                    Жокко чыгаруу
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <div class="hero-image">
-                    <div class="game-card">
-                        <i class="fas fa-rocket"></i>
-                    </div>
-                </div>
-            </section>
+    // Удобные функции для рекордов
+    const Records = {
+      get(key) {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+      },
+      set(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+      },
+      update(key, newValue) {
+        const current = this.get(key) || {};
+        this.set(key, { ...current, ...newValue });
+      }
+    };
 
-            <section class="features">
-                <div class="feature">
-                    <i class="fas fa-download"></i>
-                    <h3>Тез жүктөө</h3>
-                    <p>Оюндар заматта жүктөлөт</p>
-                </div>
-                <div class="feature">
-                    <i class="fas fa-shield-alt"></i>
-                    <h3>Коопсуздук</h3>
-                    <p>Коопсуз төлөмдөр</p>
-                </div>
-                <div class="feature">
-                    <i class="fas fa-headset"></i>
-                    <h3>24/7 Колдоо</h3>
-                    <p>Ар дайым жардам беребиз</p>
-                </div>
-            </section>
+    // 1) Arkan tartysh
+    const ropeFill = document.getElementById('ropeFill');
+    const arkanStatus = document.getElementById('arkanStatus');
+    const arkanRecordEl = document.getElementById('arkanRecord');
+    const leftPull = document.getElementById('leftPull');
+    const rightPull = document.getElementById('rightPull');
+    const arkanReset = document.getElementById('arkanReset');
+    let rope = 50;
+    let arkanOver = false;
 
-            <section class="profile-page" id="profilePage" style="display: none;">
-                <div class="profile-container">
-                    <div class="profile-header">
-                        <div class="profile-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="profile-info">
-                            <h2 id="profileUsername">Колдонуучу аты</h2>
-                            <p id="profileEmail">email@example.com</p>
-                            <p class="profile-date" id="profileDate">Катталган: 27.01.2025</p>
-                        </div>
-                        <button class="btn btn-secondary" id="backToMainBtn">
-                            <i class="fas fa-arrow-left"></i>
-                            Артка
-                        </button>
-                    </div>
+    function drawRope() {
+      ropeFill.style.width = `${rope}%`;
+      if (rope <= 5) {
+        arkanStatus.textContent = 'Сол команда жеңди';
+        arkanOver = true;
+        const rec = Records.get('arkan') || { left: 0, right: 0 };
+        rec.left++;
+        Records.set('arkan', rec);
+        updateArkanRecord();
+      } else if (rope >= 95) {
+        arkanStatus.textContent = 'Оң команда жеңди';
+        arkanOver = true;
+        const rec = Records.get('arkan') || { left: 0, right: 0 };
+        rec.right++;
+        Records.set('arkan', rec);
+        updateArkanRecord();
+      }
+    }
 
-                    <div class="profile-content">
-                        <div class="profile-tabs">
-                            <button class="profile-tab active" id="profileTab">
-                                <i class="fas fa-user"></i>
-                                Профиль
-                            </button>
-                            <button class="profile-tab" id="settingsTab">
-                                <i class="fas fa-cog"></i>
-                                Жөндөөлөр
-                            </button>
-                            <button class="profile-tab" id="accountTab">
-                                <i class="fas fa-shield-alt"></i>
-                                Аккаунт
-                            </button>
-                        </div>
+    function updateArkanRecord() {
+      const rec = Records.get('arkan') || { left: 0, right: 0 };
+      arkanRecordEl.textContent = `📊 Рекордтор: Сол команда ${rec.left}, Оң команда ${rec.right}`;
+    }
 
-                        <div class="profile-section active" id="profileSection">
-                            <h3>Профиль маалыматы</h3>
-                            <div class="profile-stats">
-                                <div class="stat-card">
-                                    <i class="fas fa-calendar"></i>
-                                    <div class="stat-info">
-                                        <span class="stat-value" id="daysRegistered">0</span>
-                                        <span class="stat-label">системадагы күндөр</span>
-                                    </div>
-                                </div>
-                                <div class="stat-card">
-                                    <i class="fas fa-gamepad"></i>
-                                    <div class="stat-info">
-                                        <span class="stat-value" id="gamesPlayed">0</span>
-                                        <span class="stat-label">ойнолгон оюндар</span>
-                                    </div>
-                                </div>
-                                <div class="stat-card">
-                                    <i class="fas fa-clock"></i>
-                                    <div class="stat-info">
-                                        <span class="stat-value" id="lastLogin">Бүгүн</span>
-                                        <span class="stat-label">акыркы кирүү</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+    function pull(side) {
+      if (arkanOver) return;
+      rope += side === 'left' ? -2.8 : 2.8;
+      rope = Math.max(0, Math.min(100, rope));
+      drawRope();
+    }
 
-                        <div class="profile-section" id="settingsSection">
-                            <h3>Жөндөөлөр</h3>
+    leftPull.addEventListener('click', () => pull('left'));
+    rightPull.addEventListener('click', () => pull('right'));
+    arkanReset.addEventListener('click', () => {
+      rope = 50;
+      arkanOver = false;
+      arkanStatus.textContent = 'Башталды';
+      drawRope();
+    });
 
-                            <div class="settings-group">
-                                <h4>Интерфейс тили</h4>
-                                <div class="language-selector">
-                                    <button class="language-btn active" data-lang="ky">
-                                        <span class="flag">🇰🇬</span>
-                                        Кыргызча
-                                    </button>
-                                </div>
-                            </div>
+    window.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 'a') pull('left');
+      if (e.key.toLowerCase() === 'l') pull('right');
+    });
+    drawRope();
+    updateArkanRecord();
 
-                            <div class="settings-group">
-                                <h4>Тема</h4>
-                                <div class="theme-selector">
-                                    <button class="theme-btn active" data-theme="light">
-                                        <i class="fas fa-sun"></i>
-                                        Жарык
-                                    </button>
-                                    <button class="theme-btn" data-theme="dark">
-                                        <i class="fas fa-moon"></i>
-                                        Караңгы
-                                    </button>
-                                    <button class="theme-btn" data-theme="auto">
-                                        <i class="fas fa-adjust"></i>
-                                        Авто
-                                    </button>
-                                </div>
-                            </div>
+    // 2) Toguz korgool (simplified)
+    const boardEl = document.getElementById('toguzBoard');
+    const turnLabel = document.getElementById('turnLabel');
+    const scoreP1El = document.getElementById('scoreP1');
+    const scoreP2El = document.getElementById('scoreP2');
+    const toguzStatus = document.getElementById('toguzStatus');
+    const toguzRecordEl = document.getElementById('toguzRecord');
+    const toguzReset = document.getElementById('toguzReset');
 
-                            <div class="settings-group">
-                                <h4>Билдирмелер</h4>
-                                <div class="notification-settings">
-                                    <label class="setting-item">
-                                        <input type="checkbox" id="emailNotifications" checked>
-                                        <span class="checkmark"></span>
-                                        Электрондук почта билдирмелери
-                                    </label>
-                                    <label class="setting-item">
-                                        <input type="checkbox" id="gameNotifications" checked>
-                                        <span class="checkmark"></span>
-                                        Оюн билдирмелери
-                                    </label>
-                                    <label class="setting-item">
-                                        <input type="checkbox" id="newsNotifications">
-                                        <span class="checkmark"></span>
-                                        Жаңылыктар жана жаңыртуулар
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
+    let pits = [];
+    let turn = 1;
+    let score1 = 0;
+    let score2 = 0;
+    let toguzOver = false;
 
-                        <div class="profile-section" id="accountSection">
-                            <h3>Аккаунтту башкаруу</h3>
+    function initToguz() {
+      pits = new Array(18).fill(9);
+      turn = 1;
+      score1 = 0;
+      score2 = 0;
+      toguzOver = false;
+      toguzStatus.textContent = 'Оюн жүрүп жатат';
+      renderToguz();
+    }
 
-                            <div class="account-actions">
-                                <div class="action-group">
-                                    <h4>Маалыматты өзгөртүү</h4>
-                                    <button class="btn btn-primary" id="changeUsernameBtn">
-                                        <i class="fas fa-edit"></i>
-                                        Колдонуучу атын өзгөртүү
-                                    </button>
-                                    <button class="btn btn-secondary" id="changePasswordBtn">
-                                        <i class="fas fa-key"></i>
-                                        Сырсөздү өзгөртүү
-                                    </button>
-                                </div>
+    function sideOf(index) {
+      return index < 9 ? 1 : 2;
+    }
 
-                                <div class="action-group">
-                                    <h4>Маалыматты экспорттоо</h4>
-                                    <button class="btn btn-secondary" id="exportDataBtn">
-                                        <i class="fas fa-download"></i>
-                                        Маалыматты жүктөп алуу
-                                    </button>
-                                </div>
+    function updateToguzRecord() {
+      const rec = Records.get('toguz') || { p1: 0, p2: 0 };
+      toguzRecordEl.textContent = `📊 Рекордтор: 1-оюнчу ${rec.p1}, 2-оюнчу ${rec.p2}`;
+    }
 
-                                <div class="action-group danger">
-                                    <h4>Кооптуу аймак</h4>
-                                    <button class="btn btn-danger" id="logoutAccountBtn">
-                                        <i class="fas fa-sign-out-alt"></i>
-                                        Аккаунттан чыгуу
-                                    </button>
-                                    <button class="btn btn-danger" id="deleteAccountDangerBtn">
-                                        <i class="fas fa-trash"></i>
-                                        Аккаунтту өчүрүү
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
+    function renderToguz() {
+      boardEl.innerHTML = '';
+      for (let i = 0; i < pits.length; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'pit';
+        const pitOwner = sideOf(i);
+        if (pitOwner !== turn || pits[i] === 0 || toguzOver) {
+          btn.classList.add('disabled');
+        }
+        btn.textContent = `${i + 1}\n${pits[i]}`;
+        btn.title = pitOwner === 1 ? '1-оюнчу' : '2-оюнчу';
+        btn.addEventListener('click', () => playPit(i));
+        boardEl.appendChild(btn);
+      }
+      turnLabel.textContent = `Жүрүш: ${turn}-оюнчу`;
+      scoreP1El.textContent = `Казан 1: ${score1}`;
+      scoreP2El.textContent = `Казан 2: ${score2}`;
+    }
 
-        <footer class="footer">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Көчмөн Ордо</h4>
-                    <p>Мыкты оюн дүкөнү</p>
-                </div>
-                <div class="footer-section">
-                    <h4>Бизди ээрчиңиз</h4>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-facebook"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                    </div>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 Көчмөн Ордо. Бардык укуктар корголгон.</p>
-            </div>
-        </footer>
-    </div>
-    <script src="mega.js"></script>
+    function checkToguzEnd() {
+      const sum1 = pits.slice(0, 9).reduce((a, b) => a + b, 0);
+      const sum2 = pits.slice(9).reduce((a, b) => a + b, 0);
+      if (sum1 === 0 || sum2 === 0) {
+        score1 += sum1;
+        score2 += sum2;
+        pits = new Array(18).fill(0);
+        toguzOver = true;
+        const rec = Records.get('toguz') || { p1: 0, p2: 0 };
+        if (score1 > score2) {
+          toguzStatus.textContent = '1-оюнчу жеңди';
+          rec.p1 = Math.max(rec.p1, score1);
+        } else if (score2 > score1) {
+          toguzStatus.textContent = '2-оюнчу жеңди';
+          rec.p2 = Math.max(rec.p2, score2);
+        } else {
+          toguzStatus.textContent = 'Тең чыкты';
+        }
+        Records.set('toguz', rec);
+        updateToguzRecord();
+      }
+    }
+
+    function playPit(index) {
+      if (toguzOver) return;
+      if (sideOf(index) !== turn) return;
+      let stones = pits[index];
+      if (stones === 0) return;
+      pits[index] = 0;
+
+      let pos = index;
+      while (stones > 0) {
+        pos = (pos + 1) % pits.length;
+        pits[pos] += 1;
+        stones -= 1;
+      }
+
+      // Simplified capture rule
+      const landingSide = sideOf(pos);
+      if (landingSide !== turn && pits[pos] % 2 === 0) {
+        const captured = pits[pos];
+        pits[pos] = 0;
+        if (turn === 1) score1 += captured;
+        else score2 += captured;
+      }
+
+      checkToguzEnd();
+      if (!toguzOver) turn = turn === 1 ? 2 : 1;
+      renderToguz();
+    }
+
+    toguzReset.addEventListener('click', initToguz);
+    initToguz();
+    updateToguzRecord();
+
+    // 3) Jaa atuu (archery)
+    const archeryCanvas = document.getElementById('archeryCanvas');
+    const ax = archeryCanvas.getContext('2d');
+    const archeryScore = document.getElementById('archeryScore');
+    const archeryArrows = document.getElementById('archeryArrows');
+    const archeryRecordEl = document.getElementById('archeryRecord');
+    const archeryReset = document.getElementById('archeryReset');
+
+    let bow = { x: 80, y: archeryCanvas.height - 70 };
+    let target = { x: 640, y: 170, r: 45, vx: 1.3 };
+    let arrow = null;
+    let aiming = false;
+    let aimPoint = { x: bow.x, y: bow.y };
+    let aScore = 0;
+    let arrowsLeft = 8;
+
+    function updateArcheryRecord() {
+      const rec = Records.get('archery') || { best: 0 };
+      archeryRecordEl.textContent = `📊 Рекорд: ${rec.best} упай`;
+    }
+
+    function getCanvasPos(evt, canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const cx = evt.clientX ?? (evt.touches && evt.touches[0].clientX) ?? rect.left;
+      const cy = evt.clientY ?? (evt.touches && evt.touches[0].clientY) ?? rect.top;
+      return { x: (cx - rect.left) * (canvas.width / rect.width), y: (cy - rect.top) * (canvas.height / rect.height) };
+    }
+
+    function drawTarget() {
+      [45, 32, 20, 10].forEach((r, i) => {
+        ax.beginPath();
+        ax.fillStyle = ['#d84f30','#f0d7a0','#4474a8','#f7f7f7'][i];
+        ax.arc(target.x, target.y, r, 0, Math.PI * 2);
+        ax.fill();
+      });
+    }
+
+    function resetArchery() {
+      arrow = null;
+      aiming = false;
+      aScore = 0;
+      arrowsLeft = 8;
+      target.x = 640;
+      archeryScore.textContent = `Упай: ${aScore}`;
+      archeryArrows.textContent = `Жебе: ${arrowsLeft}`;
+    }
+
+    function launchArrow(px, py) {
+      if (arrow || arrowsLeft <= 0) return;
+      const dx = bow.x - px;
+      const dy = bow.y - py;
+      const power = Math.min(24, Math.hypot(dx, dy) / 5);
+      arrow = { x: bow.x, y: bow.y, vx: dx / 12 * (power / 5), vy: dy / 12 * (power / 5) };
+      arrowsLeft -= 1;
+      archeryArrows.textContent = `Жебе: ${arrowsLeft}`;
+    }
+
+    function archeryLoop() {
+      ax.clearRect(0, 0, archeryCanvas.width, archeryCanvas.height);
+
+      // ground
+      ax.fillStyle = '#e7dec9';
+      ax.fillRect(0, archeryCanvas.height - 40, archeryCanvas.width, 40);
+
+      // moving target
+      target.x += target.vx;
+      if (target.x > 735 || target.x < 500) target.vx *= -1;
+      drawTarget();
+
+      // bow
+      ax.strokeStyle = '#4b3326';
+      ax.lineWidth = 4;
+      ax.beginPath();
+      ax.arc(bow.x, bow.y, 28, Math.PI/2, Math.PI*1.5);
+      ax.stroke();
+
+      // aim line
+      if (aiming) {
+        ax.strokeStyle = '#2f6b52';
+        ax.lineWidth = 2;
+        ax.beginPath();
+        ax.moveTo(bow.x, bow.y);
+        ax.lineTo(aimPoint.x, aimPoint.y);
+        ax.stroke();
+      }
+
+      if (arrow) {
+        arrow.x += arrow.vx;
+        arrow.y += arrow.vy;
+        arrow.vy += 0.07;
+
+        ax.strokeStyle = '#222';
+        ax.lineWidth = 3;
+        ax.beginPath();
+        ax.moveTo(arrow.x, arrow.y);
+        ax.lineTo(arrow.x - 16, arrow.y - 2);
+        ax.stroke();
+
+        const d = Math.hypot(arrow.x - target.x, arrow.y - target.y);
+        if (d <= target.r) {
+          if (d <= 10) aScore += 10;
+          else if (d <= 20) aScore += 7;
+          else if (d <= 32) aScore += 5;
+          else aScore += 3;
+          archeryScore.textContent = `Упай: ${aScore}`;
+          arrow = null;
+        }
+
+        if (arrow && (arrow.x > archeryCanvas.width || arrow.y > archeryCanvas.height || arrow.x < 0)) {
+          arrow = null;
+        }
+      }
+
+      if (arrowsLeft === 0 && !arrow) {
+        const rec = Records.get('archery') || { best: 0 };
+        if (aScore > rec.best) {
+          rec.best = aScore;
+          Records.set('archery', rec);
+          updateArcheryRecord();
+        }
+        ax.fillStyle = '#222';
+        ax.font = 'bold 24px Segoe UI';
+        ax.fillText(`Бүттү! Упай: ${aScore}`, 280, 60);
+      }
+
+      requestAnimationFrame(archeryLoop);
+    }
+
+    archeryCanvas.addEventListener('pointerdown', (e) => {
+      const p = getCanvasPos(e, archeryCanvas);
+      aiming = true;
+      aimPoint = p;
+    });
+
+    archeryCanvas.addEventListener('pointermove', (e) => {
+      if (!aiming) return;
+      aimPoint = getCanvasPos(e, archeryCanvas);
+    });
+
+    archeryCanvas.addEventListener('pointerup', (e) => {
+      if (!aiming) return;
+      const p = getCanvasPos(e, archeryCanvas);
+      aiming = false;
+      launchArrow(p.x, p.y);
+    });
+
+    archeryReset.addEventListener('click', resetArchery);
+    resetArchery();
+    updateArcheryRecord();
+    archeryLoop();
+
+    // 4) Kok-boru mini arcade
+    const kokCanvas = document.getElementById('kokCanvas');
+    const kx = kokCanvas.getContext('2d');
+    const kokScore = document.getElementById('kokScore');
+    const kokLives = document.getElementById('kokLives');
+    const kokRecordEl = document.getElementById('kokRecord');
+    const kokReset = document.getElementById('kokReset');
+
+    let player, goat, enemies, keys, goals, lives, gameOver;
+
+    function updateKokRecord() {
+      const rec = Records.get('kok') || { best: 0 };
+      kokRecordEl.textContent = `📊 Рекорд: ${rec.best} голдор`;
+    }
+
+    function resetKok() {
+      player = { x: 80, y: 180, w: 24, h: 24, speed: 2.8, hasGoat: false };
+      goat = { x: kokCanvas.width / 2 - 8, y: kokCanvas.height / 2 - 8, w: 16, h: 16, taken: false };
+      enemies = [
+        { x: 260, y: 40, w: 22, h: 22, vx: 1.7, vy: 1.4 },
+        { x: 520, y: 280, w: 22, h: 22, vx: -1.6, vy: 1.2 },
+        { x: 410, y: 160, w: 22, h: 22, vx: 1.9, vy: -1.3 }
+      ];
+      keys = {};
+      goals = 0;
+      lives = 3;
+      gameOver = false;
+      kokScore.textContent = `Голдор: ${goals}`;
+      kokLives.textContent = `Жашоо: ${lives}`;
+    }
+
+    function rectsHit(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    window.addEventListener('keydown', e => keys[e.key] = true);
+    window.addEventListener('keyup', e => keys[e.key] = false);
+
+    function updateKok() {
+      if (gameOver) return;
+
+      if (keys.ArrowUp) player.y -= player.speed;
+      if (keys.ArrowDown) player.y += player.speed;
+      if (keys.ArrowLeft) player.x -= player.speed;
+      if (keys.ArrowRight) player.x += player.speed;
+
+      player.x = Math.max(0, Math.min(kokCanvas.width - player.w, player.x));
+      player.y = Math.max(0, Math.min(kokCanvas.height - player.h, player.y));
+
+      if (!goat.taken && rectsHit(player, goat)) {
+        goat.taken = true;
+        player.hasGoat = true;
+      }
+
+      enemies.forEach(en => {
+        en.x += en.vx;
+        en.y += en.vy;
+        if (en.x <= 0 || en.x + en.w >= kokCanvas.width) en.vx *= -1;
+        if (en.y <= 0 || en.y + en.h >= kokCanvas.height) en.vy *= -1;
+
+        if (rectsHit(player, en)) {
+          lives -= 1;
+          kokLives.textContent = `Жашоо: ${lives}`;
+          player.x = 80;
+          player.y = 180;
+          player.hasGoat = false;
+          goat.taken = false;
+          goat.x = kokCanvas.width / 2 - 8;
+          goat.y = kokCanvas.height / 2 - 8;
+          if (lives <= 0) {
+            gameOver = true;
+            const rec = Records.get('kok') || { best: 0 };
+            if (goals > rec.best) {
+              rec.best = goals;
+              Records.set('kok', rec);
+              updateKokRecord();
+            }
+          }
+        }
+      });
+
+      const goalZone = { x: kokCanvas.width - 50, y: 130, w: 42, h: 100 };
+      if (player.hasGoat && rectsHit(player, goalZone)) {
+        goals += 1;
+        kokScore.textContent = `Голдор: ${goals}`;
+        player.hasGoat = false;
+        goat.taken = false;
+        goat.x = kokCanvas.width / 2 - 8;
+        goat.y = kokCanvas.height / 2 - 8;
+      }
+    }
+
+    function drawKok() {
+      kx.clearRect(0, 0, kokCanvas.width, kokCanvas.height);
+
+      // Field
+      kx.fillStyle = '#d7e8bf';
+      kx.fillRect(0, 0, kokCanvas.width, kokCanvas.height);
+
+      // Goal
+      kx.fillStyle = '#f2d9a6';
+      kx.fillRect(kokCanvas.width - 50, 130, 42, 100);
+      kx.strokeStyle = '#8f5f2a';
+      kx.strokeRect(kokCanvas.width - 50, 130, 42, 100);
+
+      // Goat
+      if (!goat.taken) {
+        kx.fillStyle = '#6b4b30';
+        kx.fillRect(goat.x, goat.y, goat.w, goat.h);
+      }
+
+      // Player
+      kx.fillStyle = player.hasGoat ? '#b24b2a' : '#2f6b52';
+      kx.fillRect(player.x, player.y, player.w, player.h);
+
+      // Enemies
+      kx.fillStyle = '#273c75';
+      enemies.forEach(en => kx.fillRect(en.x, en.y, en.w, en.h));
+
+      if (gameOver) {
+        kx.fillStyle = 'rgba(0,0,0,.55)';
+        kx.fillRect(0, 0, kokCanvas.width, kokCanvas.height);
+        kx.fillStyle = '#fff';
+        kx.font = 'bold 30px Segoe UI';
+        kx.fillText(`Оюн бүттү! Гол: ${goals}`, 245, 180);
+      }
+    }
+
+    function kokLoop() {
+      updateKok();
+      drawKok();
+      requestAnimationFrame(kokLoop);
+    }
+
+    kokReset.addEventListener('click', resetKok);
+    resetKok();
+    updateKokRecord();
+    kokLoop();
+  </script>
 </body>
 </html>
